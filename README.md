@@ -30,7 +30,7 @@ cd backend
 npm install
 
 # 프론트엔드
-cd ../frontend
+cd frontend
 npm install
 ```
 
@@ -66,6 +66,7 @@ docker-compose up
 ## 📦 기술 스택
 
 ### 백엔드
+
 - **Framework**: Express.js
 - **Language**: TypeScript
 - **Authentication**: JWT
@@ -74,6 +75,7 @@ docker-compose up
 - **API Docs**: Swagger
 
 ### 프론트엔드
+
 - **Framework**: React 18
 - **Language**: TypeScript
 - **Build Tool**: Vite
@@ -85,6 +87,7 @@ docker-compose up
 ## 📁 주요 디렉토리 구조
 
 ### 백엔드 구조
+
 ```
 backend/src/
 ├── controllers/      # API 엔드포인트 핸들러
@@ -97,6 +100,7 @@ backend/src/
 ```
 
 ### 프론트엔드 구조
+
 ```
 frontend/src/
 ├── components/       # UI 컴포넌트 (Atomic Design)
@@ -130,12 +134,14 @@ frontend/src/
 ## 📝 API 엔드포인트
 
 ### 인증
+
 - `POST /api/v1/auth/register` - 회원가입
 - `POST /api/v1/auth/login` - 로그인
 - `POST /api/v1/auth/logout` - 로그아웃
 - `POST /api/v1/auth/refresh` - 토큰 갱신
 
 ### 사용자
+
 - `GET /api/v1/users` - 전체 사용자 조회 (관리자)
 - `GET /api/v1/users/profile` - 내 프로필 조회
 - `PUT /api/v1/users/profile` - 프로필 수정
