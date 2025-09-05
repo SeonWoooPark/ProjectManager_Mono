@@ -63,6 +63,7 @@ docker-compose.override.yml
 # MCP
 .mcp.json
 .claude/
+Claude.md
 
 # OS files
 .DS_Store
