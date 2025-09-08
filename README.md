@@ -2,7 +2,7 @@
 
 확장 가능한 Express + TypeScript 백엔드와 React + TypeScript 프론트엔드 애플리케이션입니다.
 
-## 🏗 프로젝트 구조
+## 🏗 123프로젝트 구조
 
 ```
 .
