@@ -27,13 +27,15 @@ class App {
     this.app.use(compression());
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-    
+
     if (config.env !== 'test') {
-      this.app.use(morgan('combined', { stream: { write: (message) => logger.info(message.trim()) }}));
+      this.app.use(
+        morgan('combined', { stream: { write: (message) => logger.info(message.trim()) } })
+      );
     }
-    
+
     this.app.use(requestLogger);
-    this.app.use('/api', rateLimiter);
+    this.app.use('/api/v1', rateLimiter);
   }
 
   private initializeRoutes(): void {
@@ -42,7 +44,7 @@ class App {
         status: 'OK',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
-        environment: config.env
+        environment: config.env,
       });
     });
 
