@@ -1,0 +1,68 @@
+// This is your Prisma schema file template for migration from TypeORM
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  // previewFeatures = ["tracing"] // Optional: for performance monitoring
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model (replacing TypeORM User entity)
+model User {
+  id                   String    @id @default(uuid())
+  username             String    @db.VarChar(100)
+  email                String    @unique @db.VarChar(255)
+  password             String    @db.VarChar(255)
+  firstName            String?   @map("first_name") @db.VarChar(100)
+  lastName             String?   @map("last_name") @db.VarChar(100)
+  phoneNumber          String?   @map("phone_number") @db.VarChar(20)
+  role                 Role      @default(USER)
+  isActive             Boolean   @default(true) @map("is_active")
+  isEmailVerified      Boolean   @default(false) @map("is_email_verified")
+  lastLoginAt          DateTime? @map("last_login_at") @db.Timestamptz(6)
+  profileImage         String?   @map("profile_image") @db.VarChar(255)
+  bio                  String?   @db.Text
+  preferences          Json?     @db.Json
+  resetPasswordToken   String?   @map("reset_password_token") @db.VarChar(255)
+  resetPasswordExpires DateTime? @map("reset_password_expires") @db.Timestamptz(6)
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt            DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  // Relations (example - add your relations here)
+  // posts    Post[]
+  // profile  Profile?
+  // comments Comment[]
+
+  @@map("users")
+  @@index([email])
+  @@index([username])
+}
+
+enum Role {
+  ADMIN
+  USER
+  MODERATOR
+
+  @@map("user_role")
+}
+
+// Add more models as needed based on your TypeORM entities
+// Example:
+// model Post {
+//   id        String   @id @default(uuid())
+//   title     String   @db.VarChar(255)
+//   content   String?  @db.Text
+//   published Boolean  @default(false)
+//   authorId  String   @map("author_id")
+//   author    User     @relation(fields: [authorId], references: [id])
+//   createdAt DateTime @default(now()) @map("created_at")
+//   updatedAt DateTime @updatedAt @map("updated_at")
+//   
+//   @@map("posts")
+//   @@index([authorId])
+// }
