@@ -1,10 +1,7 @@
 import { Router } from 'express';
-import authRouter from './auth.routes';
-import userRouter from './user.routes';
 
 const router = Router();
 
-router.use('/auth', authRouter);
-router.use('/users', userRouter);
+// 새로운 라우트들을 여기에 추가할 예정
 
 export default router;

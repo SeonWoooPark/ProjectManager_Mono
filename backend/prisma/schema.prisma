@@ -1,0 +1,256 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ActivityLog {
+  id            String   @id @db.VarChar(50)
+  task_id       String?  @db.VarChar(50)
+  project_id    String?  @db.VarChar(50)
+  changed_by    String   @db.VarChar(50)
+  action        String   @db.VarChar(100)
+  details       Json?
+  created_at    DateTime @default(now()) @db.Timestamp(6)
+  changedByUser User     @relation(fields: [changed_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_logs_changed_by")
+  project       Project? @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_logs_project")
+  task          Task?    @relation(fields: [task_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_logs_task")
+
+  @@index([action], map: "idx_logs_action")
+  @@index([changed_by], map: "idx_logs_changed_by")
+  @@index([created_at(sort: Desc)], map: "idx_logs_created_at")
+  @@index([project_id], map: "idx_logs_project_id")
+  @@index([task_id], map: "idx_logs_task_id")
+  @@map("activity_logs")
+}
+
+model AllocateProject {
+  id           String   @id @db.VarChar(50)
+  user_id      String   @db.VarChar(50)
+  project_id   String   @db.VarChar(50)
+  allocated_at DateTime @default(now()) @db.Timestamp(6)
+  project      Project  @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_allocate_project")
+  user         User     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_allocate_user")
+
+  @@unique([user_id, project_id], map: "uq_user_project")
+  @@index([project_id], map: "idx_allocate_project_id")
+  @@index([user_id], map: "idx_allocate_user_id")
+  @@map("allocate_projects")
+}
+
+model Company {
+  id                  String        @id @db.VarChar(50)
+  company_name        String        @db.VarChar(200)
+  company_description String?       @db.VarChar(1000)
+  manager_id          String?       @unique @db.VarChar(50)
+  invitation_code     String?       @unique @db.VarChar(20)
+  created_at          DateTime      @default(now()) @db.Timestamp(6)
+  status_id           Int
+  manager             User?         @relation("CompanyManager", fields: [manager_id], references: [id], onUpdate: NoAction, map: "fk_companies_manager")
+  status              CompanyStatus @relation(fields: [status_id], references: [id], onUpdate: NoAction, map: "fk_companies_status")
+  projects            Project[]
+  employees           User[]        @relation("CompanyEmployees")
+
+  @@index([invitation_code], map: "idx_companies_invitation_code")
+  @@index([manager_id], map: "idx_companies_manager_id")
+  @@index([status_id], map: "idx_companies_status")
+  @@map("companies")
+}
+
+model CompanyStatus {
+  id          Int       @id
+  status_name String    @unique @db.VarChar(50)
+  companies   Company[]
+
+  @@map("companies_status")
+}
+
+model PasswordResetToken {
+  id         String    @id @db.VarChar(50)
+  user_id    String    @db.VarChar(50)
+  jti        String    @unique @db.VarChar(100)
+  token_hash String    @db.VarChar(255)
+  expires_at DateTime  @db.Timestamp(6)
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+  used_at    DateTime? @db.Timestamp(6)
+  ip_address String?   @db.VarChar(45)
+  user       User      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_reset_user")
+
+  @@index([expires_at], map: "idx_reset_expires_at")
+  @@index([jti], map: "idx_reset_jti")
+  @@index([user_id], map: "idx_reset_user_id")
+  @@map("password_reset_tokens")
+}
+
+model ProjectStatus {
+  id          Int       @id
+  status_name String    @unique @db.VarChar(50)
+  projects    Project[]
+
+  @@map("project_status")
+}
+
+model Project {
+  id                  String            @id @db.VarChar(50)
+  project_name        String            @db.VarChar(200)
+  project_description String?           @db.VarChar(2000)
+  start_date          DateTime          @db.Date
+  end_date            DateTime          @db.Date
+  company_id          String            @db.VarChar(50)
+  progress_rate       Decimal?          @default(0) @db.Decimal(5, 2)
+  status_id           Int?
+  created_at          DateTime          @default(now()) @db.Timestamp(6)
+  updated_at          DateTime          @default(now()) @db.Timestamp(6)
+  activityLogs        ActivityLog[]
+  allocatedProjects   AllocateProject[]
+  company             Company           @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_projects_company")
+  status              ProjectStatus?    @relation(fields: [status_id], references: [id], onUpdate: NoAction, map: "fk_projects_status")
+  tasks               Task[]
+
+  @@index([company_id], map: "idx_projects_company_id")
+  @@index([start_date, end_date], map: "idx_projects_dates")
+  @@index([status_id], map: "idx_projects_status_id")
+  @@map("projects")
+}
+
+model RefreshToken {
+  id                 String    @id @db.VarChar(50)
+  user_id            String    @db.VarChar(50)
+  token_hash         String    @unique @db.VarChar(255)
+  token_family       String    @db.VarChar(100)
+  expires_at         DateTime  @db.Timestamp(6)
+  created_at         DateTime  @default(now()) @db.Timestamp(6)
+  last_used_at       DateTime? @db.Timestamp(6)
+  revoked_at         DateTime? @db.Timestamp(6)
+  revoked_reason     String?   @db.VarChar(50)
+  ip_address         String?   @db.VarChar(45)
+  user_agent         String?   @db.VarChar(500)
+  device_fingerprint String?   @db.VarChar(255)
+  user               User      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_refresh_user")
+
+  @@index([expires_at], map: "idx_refresh_expires_at")
+  @@index([revoked_at], map: "idx_refresh_revoked_at")
+  @@index([token_family], map: "idx_refresh_token_family")
+  @@index([user_id], map: "idx_refresh_user_id")
+  @@map("refresh_tokens")
+}
+
+model Review {
+  id          String      @id @db.VarChar(50)
+  task_id     String      @db.VarChar(50)
+  status_id   Int?
+  assignee_id String      @db.VarChar(50)
+  manager_id  String      @db.VarChar(50)
+  comment     String?     @db.VarChar(1000)
+  created_at  DateTime    @default(now()) @db.Timestamp(6)
+  reviewed_at DateTime?   @db.Timestamp(6)
+  assignee    User        @relation("ReviewAssignee", fields: [assignee_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_reviews_assignee")
+  manager     User        @relation("ReviewManager", fields: [manager_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_reviews_manager")
+  status      TaskStatus? @relation(fields: [status_id], references: [id], onUpdate: NoAction, map: "fk_reviews_status")
+  task        Task        @relation(fields: [task_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_reviews_task")
+
+  @@index([manager_id], map: "idx_reviews_manager_id")
+  @@index([status_id], map: "idx_reviews_status_id")
+  @@index([task_id], map: "idx_reviews_task_id")
+  @@map("reviews")
+}
+
+model Role {
+  id        Int    @id
+  role_name String @unique @db.VarChar(50)
+  users     User[]
+
+  @@map("roles")
+}
+
+model Task {
+  id               String        @id @db.VarChar(50)
+  task_name        String        @db.VarChar(200)
+  task_description String?       @db.VarChar(2000)
+  project_id       String        @db.VarChar(50)
+  assignee_id      String?       @db.VarChar(50)
+  status_id        Int?
+  start_date       DateTime?     @db.Date
+  end_date         DateTime?     @db.Date
+  progress_rate    Decimal?      @default(0) @db.Decimal(5, 2)
+  created_at       DateTime      @default(now()) @db.Timestamp(6)
+  updated_at       DateTime      @default(now()) @db.Timestamp(6)
+  activityLogs     ActivityLog[]
+  reviews          Review[]
+  assignee         User?         @relation(fields: [assignee_id], references: [id], onUpdate: NoAction, map: "fk_tasks_assignee")
+  project          Project       @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_tasks_project")
+  status           TaskStatus?   @relation(fields: [status_id], references: [id], onUpdate: NoAction, map: "fk_tasks_status")
+
+  @@index([assignee_id], map: "idx_tasks_assignee_id")
+  @@index([start_date, end_date], map: "idx_tasks_dates")
+  @@index([project_id], map: "idx_tasks_project_id")
+  @@index([status_id], map: "idx_tasks_status_id")
+  @@map("tasks")
+}
+
+model TaskStatus {
+  id          Int      @id
+  status_name String   @unique @db.VarChar(50)
+  reviews     Review[]
+  tasks       Task[]
+
+  @@map("tasks_status")
+}
+
+model TokenBlacklist {
+  id             String   @id @db.VarChar(50)
+  jti            String   @unique @db.VarChar(100)
+  token_type     String   @db.VarChar(20)
+  user_id        String?  @db.VarChar(50)
+  expires_at     DateTime @db.Timestamp(6)
+  blacklisted_at DateTime @default(now()) @db.Timestamp(6)
+  reason         String?  @db.VarChar(100)
+  user           User?    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_blacklist_user")
+
+  @@index([expires_at], map: "idx_blacklist_expires_at")
+  @@index([jti], map: "idx_blacklist_jti")
+  @@index([user_id], map: "idx_blacklist_user_id")
+  @@map("token_blacklist")
+}
+
+model User {
+  id                  String               @id @db.VarChar(50)
+  email               String               @unique @db.VarChar(255)
+  password_hash       String               @db.VarChar(255)
+  user_name           String               @db.VarChar(100)
+  phone_number        String?              @db.VarChar(20)
+  role_id             Int
+  status_id           Int
+  company_id          String?              @db.VarChar(50)
+  created_at          DateTime             @default(now()) @db.Timestamp(6)
+  updated_at          DateTime             @default(now()) @db.Timestamp(6)
+  activityLogs        ActivityLog[]
+  allocatedProjects   AllocateProject[]
+  managedCompany      Company?             @relation("CompanyManager")
+  passwordResetTokens PasswordResetToken[]
+  refreshTokens       RefreshToken[]
+  assignedReviews     Review[]             @relation("ReviewAssignee")
+  managedReviews      Review[]             @relation("ReviewManager")
+  tasks               Task[]
+  tokenBlacklist      TokenBlacklist[]
+  company             Company?             @relation("CompanyEmployees", fields: [company_id], references: [id], onUpdate: NoAction, map: "fk_users_company")
+  role                Role                 @relation(fields: [role_id], references: [id], onUpdate: NoAction, map: "fk_users_role")
+  status              UserStatus           @relation(fields: [status_id], references: [id], onUpdate: NoAction, map: "fk_users_status")
+
+  @@index([company_id], map: "idx_users_company_id")
+  @@index([email], map: "idx_users_email")
+  @@index([role_id], map: "idx_users_role_id")
+  @@index([status_id], map: "idx_users_status_id")
+  @@map("users")
+}
+
+model UserStatus {
+  id          Int    @id
+  status_name String @unique @db.VarChar(50)
+  users       User[]
+
+  @@map("users_status")
+}
