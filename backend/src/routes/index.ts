@@ -1,7 +1,14 @@
 import { Router } from 'express';
+import authRoutes from './auth.routes';
 
 const router = Router();
 
-// 새로운 라우트들을 여기에 추가할 예정
+// Auth routes
+router.use('/auth', authRoutes);
+
+// Health check
+router.get('/health', (_req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
 
 export default router;
