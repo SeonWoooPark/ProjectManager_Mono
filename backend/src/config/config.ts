@@ -24,7 +24,9 @@ export const config = {
     password: process.env.REDIS_PASSWORD || '',
   },
   cors: {
-    origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'],
+    origin: process.env.CORS_ORIGIN === '*' 
+      ? true  // 모든 origin 허용
+      : process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'],
     credentials: true,
     optionsSuccessStatus: 200,
   },

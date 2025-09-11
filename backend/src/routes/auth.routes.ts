@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { authController } from '../controllers/auth.controller';
 import { 
   authenticateToken, 
@@ -8,8 +8,14 @@ import {
 } from '../middleware/auth.middleware';
 import { validateRequest } from '../middleware/validateRequest';
 import { body, query } from 'express-validator';
+import {
+  validateCompanyManagerSignup,
+  validateTeamMemberSignup,
+} from '../middleware/dbConstraintValidator';
 
 const router = Router();
+
+console.log('[Auth Routes] Initializing auth routes...');
 
 // Validation schemas
 const companyManagerSignupValidation = [
@@ -30,7 +36,7 @@ const teamMemberSignupValidation = [
 ];
 
 const loginValidation = [
-  body('email').isEmail().normalizeEmail().withMessage('유효한 이메일을 입력해주세요'),
+  body('email').notEmpty().trim().withMessage('이메일을 입력해주세요'),
   body('password').notEmpty().withMessage('비밀번호를 입력해주세요')
 ];
 
@@ -49,14 +55,18 @@ const verifyResetTokenValidation = [
 ];
 
 const companyApprovalValidation = [
-  body('company_id').notEmpty().withMessage('회사 ID가 필요합니다'),
+  body('company_id')
+    .notEmpty().withMessage('회사 ID가 필요합니다')
+    .matches(/^cmp_[a-zA-Z0-9]{6,}$/).withMessage('올바른 회사 ID 형식이 아닙니다'),
   body('action').isIn(['approve', 'reject']).withMessage('승인 또는 거부를 선택해주세요'),
   body('comment').optional().trim(),
   body('generate_invitation_code').optional().isBoolean()
 ];
 
 const memberApprovalValidation = [
-  body('user_id').notEmpty().withMessage('사용자 ID가 필요합니다'),
+  body('user_id')
+    .notEmpty().withMessage('사용자 ID가 필요합니다')
+    .matches(/^usr_[a-zA-Z0-9]{6,}$/).withMessage('올바른 사용자 ID 형식이 아닙니다'),
   body('action').isIn(['approve', 'reject']).withMessage('승인 또는 거부를 선택해주세요'),
   body('comment').optional().trim()
 ];
@@ -68,6 +78,7 @@ router.post(
   '/signup/company-manager',
   companyManagerSignupValidation,
   validateRequest,
+  validateCompanyManagerSignup, // Add database constraint validation
   authController.signupCompanyManager
 );
 
@@ -75,12 +86,19 @@ router.post(
   '/signup/team-member',
   teamMemberSignupValidation,
   validateRequest,
+  validateTeamMemberSignup, // Add database constraint validation
   authController.signupTeamMember
 );
 
 // Login route
+console.log('[Auth Routes] Registering /login route');
 router.post(
   '/login',
+  (req: Request, _res: Response, next: NextFunction) => {
+    console.log('[Auth Routes] Login route handler called');
+    console.log('[Auth Routes] Request body:', req.body);
+    next();
+  },
   loginValidation,
   validateRequest,
   authController.login

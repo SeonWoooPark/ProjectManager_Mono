@@ -1,25 +1,24 @@
 import { Request, Response, NextFunction } from 'express';
-import { validate } from 'class-validator';
-import { plainToClass } from 'class-transformer';
-import { AppError } from './errorHandler';
+import { validationResult } from 'express-validator';
+import { ValidationError } from '../utils/errors';
 
-export const validateRequest = (type: any) => {
-  return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const dto = plainToClass(type, req.body);
-      const errors = await validate(dto);
-      
-      if (errors.length > 0) {
-        const message = errors
-          .map(error => Object.values(error.constraints || {}).join(', '))
-          .join('; ');
-        throw new AppError(message, 400);
+export const validateRequest = (req: Request, _res: Response, next: NextFunction) => {
+  console.log('[ValidateRequest] Checking validation errors...');
+  
+  const errors = validationResult(req);
+  
+  if (!errors.isEmpty()) {
+    console.log('[ValidateRequest] Validation errors found:', errors.array());
+    const errorMessages = errors.array().map(error => {
+      if ('msg' in error) {
+        return `${error.msg}`;
       }
-      
-      req.body = dto;
-      next();
-    } catch (error) {
-      next(error);
-    }
-  };
+      return 'Validation error';
+    });
+    
+    return next(new ValidationError(errorMessages.join(', ')));
+  }
+  
+  console.log('[ValidateRequest] No validation errors, proceeding...');
+  next();
 };

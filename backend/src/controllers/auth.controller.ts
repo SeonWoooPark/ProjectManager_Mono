@@ -39,12 +39,17 @@ export class AuthController {
 
   // Login
   async login(req: Request, res: Response, next: NextFunction) {
+    console.log('[AuthController] Login method called');
+    console.log('[AuthController] Request body:', req.body);
+    
     try {
       const dto: LoginRequestDto = req.body;
       const ipAddress = req.ip;
       const userAgent = req.headers['user-agent'];
       
+      console.log('[AuthController] Calling authService.login with:', dto);
       const result = await authService.login(dto, ipAddress, userAgent);
+      console.log('[AuthController] Login result:', result);
       
       // Set refresh token as HttpOnly cookie
       res.cookie('refresh_token', result.refresh_token, {

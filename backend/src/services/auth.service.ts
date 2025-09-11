@@ -1,14 +1,14 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import crypto from 'crypto';
 import { jwtManager } from '../utils/jwt';
 import { passwordManager } from '../utils/password';
-import { 
+import {
   CompanyManagerSignupRequestDto,
   TeamMemberSignupRequestDto,
   LoginRequestDto,
   UserStatus,
   CompanyStatus,
-  UserRole
+  UserRole,
 } from '../types/auth.types';
 import {
   ConflictError,
@@ -22,10 +22,12 @@ import {
   TokenAlreadyUsedError,
   PasswordPolicyError,
   PasswordMismatchError,
-  ValidationError
+  ValidationError,
 } from '../utils/errors';
-
-const prisma = new PrismaClient();
+import {
+  IdValidator,
+  DbConstraintValidator,
+} from '../utils/dbConstraints';
 
 export class AuthService {
   // Company Manager Signup
@@ -40,7 +42,7 @@ export class AuthService {
 
     // Check email uniqueness
     const existingUser = await prisma.user.findUnique({
-      where: { email: user.email }
+      where: { email: user.email },
     });
     if (existingUser) {
       throw new ConflictError('이미 사용 중인 이메일입니다', 'email');
@@ -48,7 +50,7 @@ export class AuthService {
 
     // Check company name uniqueness
     const existingCompany = await prisma.company.findFirst({
-      where: { company_name: company.company_name }
+      where: { company_name: company.company_name },
     });
     if (existingCompany) {
       throw new ConflictError('이미 등록된 회사명입니다', 'company_name');
@@ -57,23 +59,48 @@ export class AuthService {
     // Hash password
     const passwordHash = await passwordManager.hashPassword(user.password);
 
+    // Validate database constraints
+    const userValidation = DbConstraintValidator.validateUserCreation({
+      email: user.email,
+      user_name: user.user_name,
+      phone_number: user.phone_number,
+      role_id: UserRole.COMPANY_MANAGER,
+      status_id: UserStatus.PENDING,
+    });
+    if (!userValidation.valid) {
+      throw new ValidationError(userValidation.errors.join(', '));
+    }
+
+    const companyValidation = DbConstraintValidator.validateCompanyCreation({
+      company_name: company.company_name,
+      company_description: company.company_description,
+      status_id: CompanyStatus.PENDING,
+    });
+    if (!companyValidation.valid) {
+      throw new ValidationError(companyValidation.errors.join(', '));
+    }
+
     // Start transaction
     const result = await prisma.$transaction(async (tx: any) => {
+      // Generate proper IDs
+      const companyId = IdValidator.generateId('COMPANY');
+      const userId = IdValidator.generateId('USER');
+
       // Create company (PENDING status)
       const newCompany = await tx.company.create({
         data: {
-          id: crypto.randomUUID(),
+          id: companyId,
           company_name: company.company_name,
           company_description: company.company_description,
           status_id: CompanyStatus.PENDING,
-          created_at: new Date()
-        }
+          created_at: new Date(),
+        },
       });
 
       // Create user (COMPANY_MANAGER role, PENDING status)
       const newUser = await tx.user.create({
         data: {
-          id: crypto.randomUUID(),
+          id: userId,
           email: user.email,
           password_hash: passwordHash,
           user_name: user.user_name,
@@ -82,14 +109,14 @@ export class AuthService {
           status_id: UserStatus.PENDING,
           company_id: newCompany.id,
           created_at: new Date(),
-          updated_at: new Date()
-        }
+          updated_at: new Date(),
+        },
       });
 
       // Update company with manager_id
       await tx.company.update({
         where: { id: newCompany.id },
-        data: { manager_id: newUser.id }
+        data: { manager_id: newUser.id },
       });
 
       return { user: newUser, company: newCompany };
@@ -98,7 +125,9 @@ export class AuthService {
     // Get role and status names
     const role = await prisma.role.findUnique({ where: { id: result.user.role_id } });
     const userStatus = await prisma.userStatus.findUnique({ where: { id: result.user.status_id } });
-    const companyStatus = await prisma.companyStatus.findUnique({ where: { id: result.company.status_id } });
+    const companyStatus = await prisma.companyStatus.findUnique({
+      where: { id: result.company.status_id },
+    });
 
     return {
       user: {
@@ -108,16 +137,16 @@ export class AuthService {
         role_id: result.user.role_id,
         role_name: role?.role_name || 'COMPANY_MANAGER',
         status_id: result.user.status_id,
-        status_name: userStatus?.status_name || 'PENDING'
+        status_name: userStatus?.status_name || 'PENDING',
       },
       company: {
         id: result.company.id,
         company_name: result.company.company_name,
         status_id: result.company.status_id,
         status_name: companyStatus?.status_name || 'PENDING',
-        invitation_code: null
+        invitation_code: null,
       },
-      message: '회원가입이 완료되었습니다. 시스템 관리자의 승인을 기다려주세요.'
+      message: '회원가입이 완료되었습니다. 시스템 관리자의 승인을 기다려주세요.',
     };
   }
 
@@ -133,7 +162,7 @@ export class AuthService {
 
     // Check email uniqueness
     const existingUser = await prisma.user.findUnique({
-      where: { email: user.email }
+      where: { email: user.email },
     });
     if (existingUser) {
       throw new ConflictError('이미 사용 중인 이메일입니다', 'email');
@@ -143,20 +172,36 @@ export class AuthService {
     const company = await prisma.company.findFirst({
       where: {
         invitation_code,
-        status_id: CompanyStatus.ACTIVE
-      }
+        status_id: CompanyStatus.ACTIVE,
+      },
     });
     if (!company) {
       throw new InvalidInvitationError();
     }
 
+    // Validate database constraints
+    const userValidation = DbConstraintValidator.validateUserCreation({
+      email: user.email,
+      user_name: user.user_name,
+      phone_number: user.phone_number,
+      role_id: UserRole.TEAM_MEMBER,
+      status_id: UserStatus.PENDING,
+      company_id: company.id,
+    });
+    if (!userValidation.valid) {
+      throw new ValidationError(userValidation.errors.join(', '));
+    }
+
     // Hash password
     const passwordHash = await passwordManager.hashPassword(user.password);
+
+    // Generate proper user ID
+    const userId = IdValidator.generateId('USER');
 
     // Create user
     const newUser = await prisma.user.create({
       data: {
-        id: crypto.randomUUID(),
+        id: userId,
         email: user.email,
         password_hash: passwordHash,
         user_name: user.user_name,
@@ -165,8 +210,8 @@ export class AuthService {
         status_id: UserStatus.PENDING,
         company_id: company.id,
         created_at: new Date(),
-        updated_at: new Date()
-      }
+        updated_at: new Date(),
+      },
     });
 
     // Get role and status names
@@ -181,31 +226,35 @@ export class AuthService {
         role_id: newUser.role_id,
         role_name: role?.role_name || 'TEAM_MEMBER',
         status_id: newUser.status_id,
-        status_name: userStatus?.status_name || 'PENDING'
+        status_name: userStatus?.status_name || 'PENDING',
       },
       company: {
         id: company.id,
-        company_name: company.company_name
+        company_name: company.company_name,
       },
-      message: '회원가입이 완료되었습니다. 회사 관리자의 승인을 기다려주세요.'
+      message: '회원가입이 완료되었습니다. 회사 관리자의 승인을 기다려주세요.',
     };
   }
 
   // Login
   async login(dto: LoginRequestDto, ipAddress?: string, userAgent?: string) {
+    console.log('[AuthService] Login method called with:', dto);
     const { email, password } = dto;
 
     // Find user with company and role info
+    console.log('[AuthService] Finding user with email:', email);
     const user = await prisma.user.findUnique({
       where: { email },
       include: {
         role: true,
         status: true,
-        company: true
-      }
+        company: true,
+      },
     });
+    console.log('[AuthService] User found:', user ? 'Yes' : 'No');
 
     if (!user) {
+      console.log('[AuthService] User not found, throwing InvalidCredentialsError');
       throw new InvalidCredentialsError();
     }
 
@@ -236,18 +285,24 @@ export class AuthService {
     const refreshToken = jwtManager.generateRefreshToken(user.id, tokenFamily);
     const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
 
+    // Generate proper refresh token ID
+    const refreshTokenId = IdValidator.generateId('REFRESH_TOKEN');
+
+    // Convert IPv6 localhost to IPv4
+    const normalizedIpAddress = ipAddress === '::1' ? '127.0.0.1' : ipAddress;
+    
     // Save refresh token
     await prisma.refreshToken.create({
       data: {
-        id: crypto.randomUUID(),
+        id: refreshTokenId,
         user_id: user.id,
         token_hash: refreshTokenHash,
         token_family: tokenFamily,
         expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
         created_at: new Date(),
-        ip_address: ipAddress,
-        user_agent: userAgent
-      }
+        ip_address: normalizedIpAddress,
+        user_agent: userAgent,
+      },
     });
 
     return {
@@ -264,17 +319,16 @@ export class AuthService {
         status_id: user.status_id,
         status_name: user.status.status_name,
         company_id: user.company_id,
-        company_name: user.company?.company_name
-      }
+        company_name: user.company?.company_name,
+      },
     };
   }
 
   // Refresh Token
   async refreshToken(refreshToken: string, ipAddress?: string, userAgent?: string) {
     // Verify refresh token
-    let payload;
     try {
-      payload = jwtManager.verifyRefreshToken(refreshToken);
+      jwtManager.verifyRefreshToken(refreshToken);
     } catch (error) {
       if (error instanceof Error) {
         if (error.message === 'REFRESH_TOKEN_EXPIRED') {
@@ -291,7 +345,7 @@ export class AuthService {
 
     // Find the refresh token in database
     const storedToken = await prisma.refreshToken.findUnique({
-      where: { token_hash: tokenHash }
+      where: { token_hash: tokenHash },
     });
 
     if (!storedToken) {
@@ -305,8 +359,8 @@ export class AuthService {
         where: { token_family: storedToken.token_family },
         data: {
           revoked_at: new Date(),
-          revoked_reason: 'suspicious_activity'
-        }
+          revoked_reason: 'suspicious_activity',
+        },
       });
       throw new TokenReuseError();
     }
@@ -322,8 +376,8 @@ export class AuthService {
       include: {
         role: true,
         status: true,
-        company: true
-      }
+        company: true,
+      },
     });
 
     if (!user) {
@@ -337,25 +391,28 @@ export class AuthService {
         where: { id: storedToken.id },
         data: {
           revoked_at: new Date(),
-          revoked_reason: 'token_rotation'
-        }
+          revoked_reason: 'token_rotation',
+        },
       });
 
       // Create new refresh token with same family
       const newRefreshToken = jwtManager.generateRefreshToken(user.id, storedToken.token_family);
       const newTokenHash = crypto.createHash('sha256').update(newRefreshToken).digest('hex');
 
+      // Generate proper refresh token ID
+      const newRefreshTokenId = IdValidator.generateId('REFRESH_TOKEN');
+
       await tx.refreshToken.create({
         data: {
-          id: crypto.randomUUID(),
+          id: newRefreshTokenId,
           user_id: user.id,
           token_hash: newTokenHash,
           token_family: storedToken.token_family,
           expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
           created_at: new Date(),
           ip_address: ipAddress,
-          user_agent: userAgent
-        }
+          user_agent: userAgent,
+        },
       });
 
       refreshToken = newRefreshToken;
@@ -374,7 +431,7 @@ export class AuthService {
       access_token: accessToken,
       refresh_token: refreshToken,
       token_type: 'Bearer',
-      expires_in: 900 // 15 minutes
+      expires_in: 900, // 15 minutes
     };
   }
 
@@ -388,17 +445,20 @@ export class AuthService {
       const decoded = jwtManager.decodeToken(accessToken) as any;
       const expiresAt = new Date(decoded.exp * 1000);
 
+      // Generate proper blacklist ID
+      const blacklistId = IdValidator.generateId('TOKEN_BLACKLIST');
+
       // Add access token to blacklist
       await prisma.tokenBlacklist.create({
         data: {
-          id: crypto.randomUUID(),
+          id: blacklistId,
           jti,
           token_type: 'access',
           user_id: decoded.sub,
           expires_at: expiresAt,
           blacklisted_at: new Date(),
-          reason: 'logout'
-        }
+          reason: 'logout',
+        },
       });
     }
 
@@ -409,8 +469,8 @@ export class AuthService {
         where: { token_hash: tokenHash },
         data: {
           revoked_at: new Date(),
-          revoked_reason: 'logout'
-        }
+          revoked_reason: 'logout',
+        },
       });
     }
 
@@ -421,13 +481,13 @@ export class AuthService {
   async forgotPassword(email: string, ipAddress?: string) {
     // Find user
     const user = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
     });
 
     // Always return success message to prevent email enumeration
     if (!user) {
       return {
-        message: '이메일이 등록되어 있다면 비밀번호 재설정 링크가 발송됩니다'
+        message: '이메일이 등록되어 있다면 비밀번호 재설정 링크가 발송됩니다',
       };
     }
 
@@ -435,11 +495,11 @@ export class AuthService {
     await prisma.passwordResetToken.updateMany({
       where: {
         user_id: user.id,
-        used_at: null
+        used_at: null,
       },
       data: {
-        used_at: new Date()
-      }
+        used_at: new Date(),
+      },
     });
 
     // Generate reset token
@@ -447,17 +507,20 @@ export class AuthService {
     const jti = jwtManager.getJti(resetToken)!;
     const tokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
 
+    // Generate proper reset token ID
+    const resetTokenId = IdValidator.generateId('PASSWORD_RESET_TOKEN');
+
     // Save reset token
     await prisma.passwordResetToken.create({
       data: {
-        id: crypto.randomUUID(),
+        id: resetTokenId,
         user_id: user.id,
         jti,
         token_hash: tokenHash,
         expires_at: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
         created_at: new Date(),
-        ip_address: ipAddress
-      }
+        ip_address: ipAddress,
+      },
     });
 
     // In production, send email
@@ -466,7 +529,7 @@ export class AuthService {
 
     return {
       message: '이메일이 등록되어 있다면 비밀번호 재설정 링크가 발송됩니다',
-      ...(process.env.NODE_ENV === 'development' && { reset_url: resetUrl })
+      ...(process.env.NODE_ENV === 'development' && { reset_url: resetUrl }),
     };
   }
 
@@ -490,7 +553,7 @@ export class AuthService {
 
     // Check if token exists in database
     const storedToken = await prisma.passwordResetToken.findUnique({
-      where: { jti: payload.jti }
+      where: { jti: payload.jti },
     });
 
     if (!storedToken || storedToken.used_at) {
@@ -504,7 +567,7 @@ export class AuthService {
     // Get user email
     const user = await prisma.user.findUnique({
       where: { id: storedToken.user_id },
-      select: { email: true }
+      select: { email: true },
     });
 
     if (!user) {
@@ -517,7 +580,7 @@ export class AuthService {
     return {
       valid: true,
       email: maskedEmail,
-      expires_at: storedToken.expires_at.toISOString()
+      expires_at: storedToken.expires_at.toISOString(),
     };
   }
 
@@ -552,7 +615,7 @@ export class AuthService {
 
     // Check token in database
     const storedToken = await prisma.passwordResetToken.findUnique({
-      where: { jti: payload.jti }
+      where: { jti: payload.jti },
     });
 
     if (!storedToken) {
@@ -577,16 +640,16 @@ export class AuthService {
         where: { id: storedToken.user_id },
         data: {
           password_hash: passwordHash,
-          updated_at: new Date()
-        }
+          updated_at: new Date(),
+        },
       });
 
       // Mark token as used
       await tx.passwordResetToken.update({
         where: { id: storedToken.id },
         data: {
-          used_at: new Date()
-        }
+          used_at: new Date(),
+        },
       });
 
       // Revoke all refresh tokens for security
@@ -594,8 +657,8 @@ export class AuthService {
         where: { user_id: storedToken.user_id },
         data: {
           revoked_at: new Date(),
-          revoked_reason: 'password_change'
-        }
+          revoked_reason: 'password_change',
+        },
       });
     });
 
@@ -614,8 +677,8 @@ export class AuthService {
     const company = await prisma.company.findUnique({
       where: { id: companyId },
       include: {
-        manager: true
-      }
+        manager: true,
+      },
     });
 
     if (!company) {
@@ -636,10 +699,11 @@ export class AuthService {
         where: { id: companyId },
         data: {
           status_id: newStatusId,
-          ...(generateInvitationCode && action === 'approve' && {
-            invitation_code: `INV-${crypto.randomBytes(6).toString('hex').toUpperCase()}`
-          })
-        }
+          ...(generateInvitationCode &&
+            action === 'approve' && {
+              invitation_code: IdValidator.generateId('INVITATION_CODE'),
+            }),
+        },
       });
 
       // Update manager status
@@ -647,16 +711,20 @@ export class AuthService {
         where: { id: company.manager_id! },
         data: {
           status_id: userStatusId,
-          updated_at: new Date()
-        }
+          updated_at: new Date(),
+        },
       });
 
       return { company: updatedCompany, manager: updatedManager };
     });
 
     // Get status names
-    const companyStatus = await prisma.companyStatus.findUnique({ where: { id: result.company.status_id } });
-    const userStatus = await prisma.userStatus.findUnique({ where: { id: result.manager.status_id } });
+    const companyStatus = await prisma.companyStatus.findUnique({
+      where: { id: result.company.status_id },
+    });
+    const userStatus = await prisma.userStatus.findUnique({
+      where: { id: result.manager.status_id },
+    });
 
     return {
       company: {
@@ -665,16 +733,16 @@ export class AuthService {
         status_id: result.company.status_id,
         status_name: companyStatus?.status_name || (action === 'approve' ? 'ACTIVE' : 'INACTIVE'),
         invitation_code: result.company.invitation_code,
-        manager_id: result.company.manager_id!
+        manager_id: result.company.manager_id!,
       },
       manager: {
         id: result.manager.id,
         email: result.manager.email,
         status_id: result.manager.status_id,
-        status_name: userStatus?.status_name || (action === 'approve' ? 'ACTIVE' : 'INACTIVE')
+        status_name: userStatus?.status_name || (action === 'approve' ? 'ACTIVE' : 'INACTIVE'),
       },
       approved_at: new Date().toISOString(),
-      approved_by: approvedBy
+      approved_by: approvedBy,
     };
   }
 
@@ -687,7 +755,7 @@ export class AuthService {
   ) {
     // Find user
     const user = await prisma.user.findUnique({
-      where: { id: userId }
+      where: { id: userId },
     });
 
     if (!user) {
@@ -701,8 +769,8 @@ export class AuthService {
       where: { id: userId },
       data: {
         status_id: newStatusId,
-        updated_at: new Date()
-      }
+        updated_at: new Date(),
+      },
     });
 
     // Get status name
@@ -715,10 +783,10 @@ export class AuthService {
         user_name: updatedUser.user_name,
         status_id: updatedUser.status_id,
         status_name: userStatus?.status_name || (action === 'approve' ? 'ACTIVE' : 'INACTIVE'),
-        company_id: updatedUser.company_id!
+        company_id: updatedUser.company_id!,
       },
       approved_at: new Date().toISOString(),
-      approved_by: approvedBy
+      approved_by: approvedBy,
     };
   }
 }
