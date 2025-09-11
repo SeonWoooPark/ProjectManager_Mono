@@ -1,15 +1,21 @@
+import 'reflect-metadata';
 import app from './app';
-import { config } from './config/config';
-import { logger } from './utils/logger';
-import { connectPrisma, disconnectPrisma } from './lib/prisma';
+import { config } from '@core/config';
+import { logger } from '@shared/utils/logger';
+import { prismaService } from '@infrastructure/database/prisma.service';
+import { initializeApp, shutdownApp } from '@core/app.bootstrap';
 
 const PORT = config.port || 5000;
 
-// 데이터베이스 연결 후 서버 시작
+// 애플리케이션 초기화 및 서버 시작
 const startServer = async () => {
   try {
-    // 데이터베이스 연결 초기화
-    await connectPrisma();
+    // 1. 애플리케이션 초기화 (DI Container 포함)
+    await initializeApp();
+    logger.info('✅ Application initialized successfully');
+
+    // 2. 데이터베이스 연결 초기화
+    await prismaService.connect();
     logger.info('✅ Database connected successfully');
 
     // 서버 시작
@@ -40,12 +46,15 @@ async function gracefulShutdown(signal: string) {
     server.close(async () => {
       logger.info('HTTP server closed');
       
-      // 데이터베이스 연결 종료
+      // 애플리케이션 및 데이터베이스 연결 종료
       try {
-        await disconnectPrisma();
+        await prismaService.disconnect();
         logger.info('Database connection closed');
+        
+        await shutdownApp();
+        logger.info('Application shutdown completed');
       } catch (error) {
-        logger.error('Error closing database connection:', error);
+        logger.error('Error during shutdown:', error);
       }
       
       process.exit(0);
