@@ -44,11 +44,10 @@ export class AuthController {
     
     try {
       const dto: LoginRequestDto = req.body;
-      const ipAddress = req.ip;
       const userAgent = req.headers['user-agent'];
       
       console.log('[AuthController] Calling authService.login with:', dto);
-      const result = await authService.login(dto, ipAddress, userAgent);
+      const result = await authService.login(dto, userAgent);
       console.log('[AuthController] Login result:', result);
       
       // Set refresh token as HttpOnly cookie
@@ -79,10 +78,13 @@ export class AuthController {
         return;
       }
       
-      const ipAddress = req.ip;
+      // Get old access token from Authorization header (if provided)
+      const authHeader = req.headers['authorization'];
+      const oldAccessToken = authHeader && authHeader.split(' ')[1];
+      
       const userAgent = req.headers['user-agent'];
       
-      const result = await authService.refreshToken(refreshToken, ipAddress, userAgent);
+      const result = await authService.refreshToken(refreshToken, userAgent, oldAccessToken);
       
       // Set new refresh token as HttpOnly cookie
       res.cookie('refresh_token', result.refresh_token, {
@@ -128,9 +130,8 @@ export class AuthController {
   async forgotPassword(req: Request, res: Response, next: NextFunction) {
     try {
       const dto: ForgotPasswordRequestDto = req.body;
-      const ipAddress = req.ip;
       
-      const result = await authService.forgotPassword(dto.email, ipAddress);
+      const result = await authService.forgotPassword(dto.email);
       
       ResponseFormatter.success(res, result, result.message);
     } catch (error) {

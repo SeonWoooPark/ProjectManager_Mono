@@ -410,8 +410,8 @@ Set-Cookie: refresh_token={token}; HttpOnly; Secure; SameSite=Strict; Max-Age=25
 5. **Refresh Token 생성 및 저장**
    ```sql
    INSERT INTO refresh_tokens 
-   (id, user_id, token_hash, token_family, expires_at, created_at, ip_address, user_agent)
-   VALUES (?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 30 DAY), NOW(), ?, ?)
+   (id, user_id, token_hash, token_family, expires_at, created_at, user_agent)
+   VALUES (?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 30 DAY), NOW(), ?)
    ```
 
 6. **HttpOnly Cookie 설정**
@@ -600,8 +600,8 @@ Content-Type: application/json
 4. **토큰 저장**
    ```sql
    INSERT INTO password_reset_tokens 
-   (id, user_id, jti, token_hash, expires_at, created_at, ip_address)
-   VALUES (?, ?, ?, SHA256(?), DATE_ADD(NOW(), INTERVAL 1 HOUR), NOW(), ?)
+   (id, user_id, jti, token_hash, expires_at, created_at)
+   VALUES (?, ?, ?, SHA256(?), DATE_ADD(NOW(), INTERVAL 1 HOUR), NOW())
    ```
 
 5. **재설정 URL 반환**

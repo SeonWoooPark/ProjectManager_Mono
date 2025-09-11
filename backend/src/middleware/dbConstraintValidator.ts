@@ -5,7 +5,6 @@ import {
   LengthValidator,
   RangeValidator,
   DateValidator,
-  IpValidator,
   EnumValidator,
   CONSTRAINTS,
 } from '../utils/dbConstraints';
@@ -447,22 +446,6 @@ export const validateTokenBlacklist = validateDbConstraints([
     required: false,
   },
 ]);
-
-/**
- * IP 주소 검증 미들웨어
- */
-export const validateIpAddress = (req: Request, res: Response, next: NextFunction) => {
-  const { ip_address } = req.body;
-  
-  if (ip_address) {
-    const result = IpValidator.validateIpAddress(ip_address);
-    if (!result.valid) {
-      throw new ValidationError(result.errors.join(', '));
-    }
-  }
-  
-  next();
-};
 
 /**
  * 벌크 데이터 길이 검증

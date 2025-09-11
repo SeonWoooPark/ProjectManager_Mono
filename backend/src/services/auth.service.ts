@@ -237,7 +237,7 @@ export class AuthService {
   }
 
   // Login
-  async login(dto: LoginRequestDto, ipAddress?: string, userAgent?: string) {
+  async login(dto: LoginRequestDto, userAgent?: string) {
     console.log('[AuthService] Login method called with:', dto);
     const { email, password } = dto;
 
@@ -272,6 +272,22 @@ export class AuthService {
       throw new AccountStatusError('INACTIVE');
     }
 
+    // Revoke all existing active refresh tokens for this user
+    // This ensures only one active session per user (optional: can be configured)
+    await prisma.refreshToken.updateMany({
+      where: {
+        user_id: user.id,
+        revoked_at: null,
+        expires_at: {
+          gt: new Date() // Only revoke non-expired tokens
+        }
+      },
+      data: {
+        revoked_at: new Date(),
+        revoked_reason: 'new_login'
+      }
+    });
+
     // Generate tokens
     const accessToken = jwtManager.generateAccessToken(
       user.id,
@@ -288,9 +304,6 @@ export class AuthService {
     // Generate proper refresh token ID
     const refreshTokenId = IdValidator.generateId('REFRESH_TOKEN');
 
-    // Convert IPv6 localhost to IPv4
-    const normalizedIpAddress = ipAddress === '::1' ? '127.0.0.1' : ipAddress;
-    
     // Save refresh token
     await prisma.refreshToken.create({
       data: {
@@ -300,7 +313,6 @@ export class AuthService {
         token_family: tokenFamily,
         expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
         created_at: new Date(),
-        ip_address: normalizedIpAddress,
         user_agent: userAgent,
       },
     });
@@ -325,7 +337,7 @@ export class AuthService {
   }
 
   // Refresh Token
-  async refreshToken(refreshToken: string, ipAddress?: string, userAgent?: string) {
+  async refreshToken(refreshToken: string, userAgent?: string, oldAccessToken?: string) {
     // Verify refresh token
     try {
       jwtManager.verifyRefreshToken(refreshToken);
@@ -386,7 +398,7 @@ export class AuthService {
 
     // Token rotation: revoke old token and create new one
     await prisma.$transaction(async (tx: any) => {
-      // Revoke old token
+      // Revoke old refresh token
       await tx.refreshToken.update({
         where: { id: storedToken.id },
         data: {
@@ -394,6 +406,34 @@ export class AuthService {
           revoked_reason: 'token_rotation',
         },
       });
+
+      // If old access token is provided, add it to blacklist
+      if (oldAccessToken) {
+        try {
+          const oldJti = jwtManager.getJti(oldAccessToken);
+          const decoded = jwtManager.decodeToken(oldAccessToken) as any;
+          
+          if (oldJti && decoded) {
+            const expiresAt = new Date(decoded.exp * 1000);
+            const blacklistId = IdValidator.generateId('TOKEN_BLACKLIST');
+            
+            await tx.tokenBlacklist.create({
+              data: {
+                id: blacklistId,
+                jti: oldJti,
+                token_type: 'access',
+                user_id: user.id,
+                expires_at: expiresAt,
+                blacklisted_at: new Date(),
+                reason: 'token_refresh',
+              },
+            });
+          }
+        } catch (error) {
+          // If old token is invalid or expired, ignore the error
+          console.log('[AuthService] Failed to blacklist old access token:', error);
+        }
+      }
 
       // Create new refresh token with same family
       const newRefreshToken = jwtManager.generateRefreshToken(user.id, storedToken.token_family);
@@ -410,7 +450,6 @@ export class AuthService {
           token_family: storedToken.token_family,
           expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
           created_at: new Date(),
-          ip_address: ipAddress,
           user_agent: userAgent,
         },
       });
@@ -478,7 +517,7 @@ export class AuthService {
   }
 
   // Forgot Password
-  async forgotPassword(email: string, ipAddress?: string) {
+  async forgotPassword(email: string) {
     // Find user
     const user = await prisma.user.findUnique({
       where: { email },
@@ -519,7 +558,6 @@ export class AuthService {
         token_hash: tokenHash,
         expires_at: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
         created_at: new Date(),
-        ip_address: ipAddress,
       },
     });
 

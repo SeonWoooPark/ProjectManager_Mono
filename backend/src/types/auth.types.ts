@@ -1,5 +1,4 @@
 import { Request } from 'express';
-import { User } from '@prisma/client';
 
 // User roles enum
 export enum UserRole {
@@ -245,7 +244,6 @@ export interface RefreshTokenInfo {
   last_used_at?: Date;
   revoked_at?: Date;
   revoked_reason?: string;
-  ip_address?: string;
   user_agent?: string;
   device_fingerprint?: string;
 }
@@ -259,7 +257,6 @@ export interface PasswordResetTokenInfo {
   expires_at: Date;
   created_at: Date;
   used_at?: Date;
-  ip_address?: string;
 }
 
 // Token blacklist entry
