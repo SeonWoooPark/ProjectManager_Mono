@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router } from 'express';
 import { authController } from '../controllers/auth.controller';
 import { 
   authenticateToken, 
@@ -14,8 +14,6 @@ import {
 } from '../middleware/dbConstraintValidator';
 
 const router = Router();
-
-console.log('[Auth Routes] Initializing auth routes...');
 
 // Validation schemas
 const companyManagerSignupValidation = [
@@ -91,14 +89,8 @@ router.post(
 );
 
 // Login route
-console.log('[Auth Routes] Registering /login route');
 router.post(
   '/login',
-  (req: Request, _res: Response, next: NextFunction) => {
-    console.log('[Auth Routes] Login route handler called');
-    console.log('[Auth Routes] Request body:', req.body);
-    next();
-  },
   loginValidation,
   validateRequest,
   authController.login

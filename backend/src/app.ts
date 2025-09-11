@@ -23,9 +23,6 @@ class App {
   }
 
   private initializeMiddlewares(): void {
-    console.log('[App] Initializing middlewares...');
-    console.log('[App] CORS config:', config.cors);
-    
     this.app.use(helmet());
     this.app.use(cors(config.cors));
     this.app.use(compression());
@@ -44,16 +41,6 @@ class App {
   }
 
   private initializeRoutes(): void {
-    console.log('[App] Initializing routes...');
-    
-    // Debug middleware to log all requests
-    this.app.use((req: Request, _res: Response, next: Function) => {
-      console.log(`[Request] ${req.method} ${req.path}`);
-      console.log('[Request Headers]', req.headers);
-      console.log('[Request Body]', req.body);
-      next();
-    });
-    
     this.app.get('/health', (_req: Request, res: Response) => {
       res.status(200).json({
         status: 'OK',
@@ -64,7 +51,6 @@ class App {
     });
 
     this.app.use('/api/v1', router);
-    console.log('[App] Routes initialized');
   }
 
   private initializeErrorHandling(): void {

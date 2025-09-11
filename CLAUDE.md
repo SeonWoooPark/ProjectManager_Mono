@@ -13,24 +13,39 @@ PM_MonoRepo/
 │   │   ├── server.ts      # 서버 진입점
 │   │   ├── config/        # 설정 파일
 │   │   ├── controllers/   # 라우트 컨트롤러
-│   │   ├── entities/      # TypeORM 엔티티 (현재 미사용)
-│   │   ├── lib/          # 외부 라이브러리 통합 (Prisma 등)
+│   │   │   └── auth.controller.ts  # 인증 컨트롤러
+│   │   ├── entities/      # TypeORM 엔티티 (레거시, 미사용)
+│   │   ├── lib/          # 외부 라이브러리 통합
+│   │   │   └── prisma.ts  # Prisma 클라이언트
 │   │   ├── middleware/    # Express 미들웨어
-│   │   ├── migrations/    # 데이터베이스 마이그레이션
+│   │   │   ├── auth.middleware.ts  # JWT 인증
+│   │   │   ├── errorHandler.ts     # 에러 처리
+│   │   │   ├── rateLimiter.ts      # API 속도 제한
+│   │   │   └── validateRequest.ts  # 입력 검증
+│   │   ├── migrations/    # TypeORM 마이그레이션 (레거시)
 │   │   ├── models/        # 데이터 모델
 │   │   ├── repositories/  # 데이터 접근 계층
 │   │   ├── routes/        # API 라우트 정의
+│   │   │   ├── index.ts   # 라우트 통합
+│   │   │   └── auth.routes.ts  # 인증 라우트
 │   │   ├── services/      # 비즈니스 로직
+│   │   │   └── auth.service.ts  # 인증 서비스
 │   │   ├── subscribers/   # 이벤트 구독자
 │   │   ├── tests/         # 테스트 파일
 │   │   ├── types/         # TypeScript 타입 정의
+│   │   │   └── auth.types.ts  # 인증 타입
 │   │   └── utils/         # 유틸리티 함수
+│   │       ├── errors.ts  # 커스텀 에러
+│   │       ├── jwt.ts     # JWT 유틸리티
+│   │       ├── password.ts # 비밀번호 해싱
+│   │       └── response.ts # 응답 포매터
 │   ├── prisma/
 │   │   ├── schema.prisma  # Prisma 스키마 정의
 │   │   └── migrations/    # Prisma 마이그레이션
 │   ├── dist/              # 컴파일된 JavaScript 파일
 │   ├── logs/              # 애플리케이션 로그
 │   ├── scripts/           # 유틸리티 스크립트
+│   │   └── seed-admin.ts  # 관리자 시드
 │   └── backup/            # 백업 파일
 │
 ├── frontend/              # React/TypeScript 프론트엔드 애플리케이션
@@ -66,13 +81,19 @@ PM_MonoRepo/
 - **런타임**: Node.js (v18+)
 - **프레임워크**: Express.js
 - **언어**: TypeScript
+- **빌드/실행**: tsx (TypeScript 실행 도구)
 - **데이터베이스**: PostgreSQL
-- **ORM**: Prisma
-- **캐시**: Redis
+- **ORM**: Prisma (타입 안전 ORM)
+- **캐시**: Redis (예정)
 - **인증**: JWT (Access Token 15분, Refresh Token 30일 with Token Rotation)
-- **보안**: helmet, cors, bcryptjs, express-validator, express-rate-limit
-- **API 문서**: Swagger
-- **로깅**: Winston
+- **보안**: 
+  - helmet (보안 헤더)
+  - cors (Cross-Origin 정책)
+  - bcryptjs (비밀번호 해싱)
+  - express-validator (입력 검증)
+  - express-rate-limit (API 속도 제한)
+- **API 문서**: Swagger (swagger-jsdoc, swagger-ui-express)
+- **로깅**: Winston + Morgan
 - **테스트**: Jest, Supertest
 
 ### Frontend
@@ -134,6 +155,151 @@ PM_MonoRepo/
 /api/v1/companies   # 회사 관리
 /api/v1/logs        # 활동 로그
 ```
+
+## Request/Response 처리 워크플로우
+
+### 1. 미들웨어 체인 구조
+```
+app.ts (Express Application)
+├── 글로벌 미들웨어 (모든 요청)
+│   ├── helmet() - 보안 헤더 설정
+│   ├── cors() - CORS 정책 적용
+│   ├── compression() - 응답 압축
+│   ├── cookieParser() - 쿠키 파싱
+│   ├── express.json() - JSON 파싱 (10mb 제한)
+│   ├── express.urlencoded() - URL 인코딩 파싱
+│   ├── morgan() - HTTP 로깅 → Winston
+│   ├── requestLogger - 커스텀 요청 로깅
+│   └── rateLimiter - API 속도 제한 (/api/v1 경로)
+│
+├── 라우트별 미들웨어
+│   ├── 입력 검증 (express-validator)
+│   ├── DB 제약 검증 (dbConstraintValidator)
+│   └── 인증/인가 미들웨어
+│       ├── authenticateToken - JWT 토큰 검증
+│       ├── requireSystemAdmin - 시스템 관리자 확인
+│       ├── requireCompanyManager - 회사 관리자 확인
+│       └── requireSameCompany - 같은 회사 소속 확인
+│
+└── 에러 처리 미들웨어
+    ├── notFoundHandler - 404 처리
+    └── errorHandler - 전역 에러 처리
+```
+
+### 2. 인증 플로우 상세
+
+#### JWT 토큰 검증 프로세스 (authenticateToken)
+1. Authorization 헤더에서 Bearer 토큰 추출
+2. 토큰 블랙리스트 확인
+3. JWT 검증 및 디코드
+4. 사용자 정보 DB 조회
+5. req.user에 사용자 정보 주입
+6. 다음 미들웨어로 진행
+
+#### 역할 기반 접근 제어
+- **requireSystemAdmin**: role_id === 1 확인
+- **requireCompanyManager**: role_id === 2 확인  
+- **requireSameCompany**: req.user.company_id === target.company_id 확인
+- **requireActiveUser**: status_id === 1 (ACTIVE) 확인
+
+### 3. 응답 처리 패턴
+
+#### ResponseFormatter 클래스 메서드
+- `success(res, data, message?, statusCode?)` - 성공 응답
+- `created(res, data, message?)` - 201 생성 응답
+- `noContent(res)` - 204 응답
+- `validationError(res, field, reason)` - 400 검증 에러
+- `unauthorized(res, message?)` - 401 인증 에러
+- `forbidden(res, message?)` - 403 권한 에러
+- `notFound(res, message?)` - 404 찾을 수 없음
+- `conflict(res, message, field?)` - 409 충돌 에러
+- `tooManyRequests(res, retryAfter?)` - 429 속도 제한
+- `internalError(res, message?)` - 500 서버 에러
+
+#### 표준 응답 형식
+```typescript
+// 성공 응답
+{
+  "success": true,
+  "data": { ... },
+  "message": "선택적 메시지"
+}
+
+// 에러 응답
+{
+  "success": false,
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "에러 메시지",
+    "details": { ... }  // 선택적
+  },
+  "timestamp": "ISO 8601 형식"
+}
+```
+
+### 4. 에러 처리 플로우
+
+#### 에러 발생 → 처리 과정
+1. **Service Layer**: 비즈니스 로직 에러 발생
+   - ApiError 인스턴스 throw
+   - Prisma 에러 발생
+   
+2. **Controller**: 에러 캐치
+   - next(error)로 에러 미들웨어로 전달
+   
+3. **ErrorHandler Middleware**: 에러 처리
+   - Prisma 에러 → ApiError 변환
+   - Winston 로깅
+   - 환경별 응답 (development: 상세, production: 간략)
+   
+4. **Client Response**: 표준화된 에러 응답
+
+### 5. Prisma 트랜잭션 처리
+
+#### 트랜잭션 패턴
+```typescript
+// Service Layer에서의 트랜잭션 사용
+const result = await prisma.$transaction(async (tx) => {
+  // 1단계: 데이터 생성/수정
+  const entity1 = await tx.model1.create({ ... });
+  
+  // 2단계: 연관 데이터 처리
+  const entity2 = await tx.model2.update({ ... });
+  
+  // 3단계: 로그 기록
+  await tx.activityLog.create({ ... });
+  
+  return { entity1, entity2 };
+}, {
+  maxWait: 5000,    // 트랜잭션 대기 시간
+  timeout: 10000,   // 트랜잭션 타임아웃
+  isolationLevel: 'Serializable'  // 격리 수준
+});
+```
+
+### 6. 보안 미들웨어 설정
+
+#### Helmet 보안 헤더
+- Content-Security-Policy
+- X-DNS-Prefetch-Control  
+- X-Frame-Options
+- X-Content-Type-Options
+- Strict-Transport-Security
+
+#### CORS 설정
+```typescript
+{
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}
+```
+
+#### Rate Limiting 설정
+- Window: 15분
+- 최대 요청: 100회
+- 초과 시: 429 Too Many Requests
 
 ## 개발 워크플로우
 

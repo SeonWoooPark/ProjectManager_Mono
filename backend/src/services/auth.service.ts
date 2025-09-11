@@ -238,11 +238,9 @@ export class AuthService {
 
   // Login
   async login(dto: LoginRequestDto, userAgent?: string) {
-    console.log('[AuthService] Login method called with:', dto);
     const { email, password } = dto;
 
     // Find user with company and role info
-    console.log('[AuthService] Finding user with email:', email);
     const user = await prisma.user.findUnique({
       where: { email },
       include: {
@@ -251,10 +249,8 @@ export class AuthService {
         company: true,
       },
     });
-    console.log('[AuthService] User found:', user ? 'Yes' : 'No');
 
     if (!user) {
-      console.log('[AuthService] User not found, throwing InvalidCredentialsError');
       throw new InvalidCredentialsError();
     }
 
@@ -431,7 +427,6 @@ export class AuthService {
           }
         } catch (error) {
           // If old token is invalid or expired, ignore the error
-          console.log('[AuthService] Failed to blacklist old access token:', error);
         }
       }
 
