@@ -3,7 +3,7 @@ import {
   UserStatus,
   UserRole,
   CompanyStatus,
-} from '@shared/interfaces/auth.types';
+} from '../interfaces/auth.types';
 import {
   ConflictError,
   NotFoundError,

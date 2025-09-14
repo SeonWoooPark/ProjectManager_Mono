@@ -27,11 +27,13 @@
 ### 📊 구성 현황
 ```
 📁 shared/
-├── 📁 middleware/     (7개 파일) - Express 미들웨어
+├── 📁 middleware/     (6개 파일) - Express 미들웨어 (인증 관련 제외)
 ├── 📁 constants/      (2개 파일) - 애플리케이션 상수
-├── 📁 utils/          (8개 파일) - 공통 유틸리티
-└── 📁 interfaces/     (3개 파일) - 타입 정의
+├── 📁 utils/          (6개 파일) - 공통 유틸리티 (JWT/비밀번호 제외)
+└── 📁 interfaces/     (1개 파일) - 공통 타입 정의
 ```
+
+> **📋 리팩토링 노트**: 인증 관련 파일들(auth.middleware.ts, jwt.ts, password.ts, auth.types.ts, repository.interfaces.ts)은 `modules/auth/` 모듈로 이동되었습니다.
 
 ---
 
@@ -43,7 +45,7 @@ Express 애플리케이션의 요청 처리 파이프라인을 구성하는 미�
 | 파일 | 역할 | 핵심 기능 |
 |-----|-----|-----------|
 | `errorHandler.ts` | 글로벌 에러 처리 | Prisma 에러 변환, 로깅, 응답 표준화 |
-| `auth.middleware.ts` | 인증/인가 | JWT 검증, 역할 기반 접근 제어, 회사별 격리 |
+
 | `rateLimiter.ts` | API 제한 | 요청 빈도 제한 (15분/100회, 엄격 모드: 15분/5회) |
 | `validateRequest.ts` | 입력 검증 | express-validator 기반 요청 데이터 검증 |
 | `requestLogger.ts` | 요청 로깅 | HTTP 요청/응답 로깅, 성능 측정 |
@@ -64,8 +66,8 @@ Express 애플리케이션의 요청 처리 파이프라인을 구성하는 미�
 |-----|-----|-----------------|
 | `errors.ts` | 에러 시스템 | `ApiError` 기반 30개+ 세분화된 에러 클래스 |
 | `response.ts` | API 응답 | `ResponseFormatter` - 표준화된 응답 생성 |
-| `jwt.ts` | JWT 관리 | `JWTManager` - Access/Refresh/Reset 토큰 처리 |
-| `password.ts` | 비밀번호 | `PasswordManager` - 해싱, 정책 검증, 강도 측정 |
+
+
 | `logger.ts` | 로깅 | Winston 기반 구조화된 로깅 시스템 |
 | `dbConstraints.ts` | DB 제약조건 | ID 패턴, 길이 제한, 범위 검증 규칙 |
 | `prismaErrorHandler.ts` | Prisma 에러 | Prisma 에러를 도메인 에러로 변환 |
@@ -75,8 +77,8 @@ Express 애플리케이션의 요청 처리 파이프라인을 구성하는 미�
 
 | 파일 | 역할 | 주요 타입 |
 |-----|-----|-----------|
-| `auth.types.ts` | 인증 타입 | `UserRole`, `AuthenticatedRequest`, 응답 DTO |
-| `repository.interfaces.ts` | 저장소 패턴 | `IUserRepository`, `ITokenRepository`, `ICompanyRepository` |
+
+> **📋 이동된 파일들**: `auth.types.ts`, `repository.interfaces.ts`는 `modules/auth/interfaces/`로 이동되었습니다.
 
 ---
 
@@ -118,28 +120,9 @@ graph TB
 
 ### 🔐 인증 시스템 (Authentication System)
 
-#### JWTManager 클래스
-```typescript
-// 3가지 토큰 타입 관리
-- Access Token (15분) - API 접근용
-- Refresh Token (30일) - 토큰 갱신용  
-- Reset Token (1시간) - 비밀번호 재설정용
-
-// 보안 기능
-- 토큰 순환(Token Rotation) 
-- JTI 기반 토큰 추적
-- 토큰 패밀리 관리
-```
-
-#### 인증 미들웨어
-```typescript
-authenticateToken()        // JWT 검증
-requireSystemAdmin()       // 시스템 관리자 권한
-requireCompanyManager()    // 회사 관리자 권한  
-requireSameCompany()       // 같은 회사 소속 검증
-requireActiveUser()        // 활성 사용자 검증
-optionalAuth()            // 선택적 인증
-```
+#### JWT 및 인증 시스템
+> **📋 이동됨**: JWT 관리 (`JWTManager` 클래스)와 인증 미들웨어들은 `modules/auth/` 모듈로 이동되었습니다.  
+> 상세 내용은 [Auth 모듈 가이드](../../modules/CLAUDE.md)를 참조하세요.
 
 ### 🛡️ 에러 처리 시스템 (Error Handling System)
 

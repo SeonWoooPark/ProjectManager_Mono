@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals';
 import { RefreshToken, PasswordResetToken } from '@prisma/client';
-import { ITokenRepository } from '@shared/interfaces/repository.interfaces';
+import { ITokenRepository } from '../../interfaces/repository.interfaces';
 
 /**
  * TokenRepository Mock Implementation

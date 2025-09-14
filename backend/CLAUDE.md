@@ -24,18 +24,21 @@ backend/src/
 │   └── bootstrap/           # 애플리케이션 부트스트랩
 ├── modules/                 # 도메인 모듈 📋 [상세 가이드](src/modules/CLAUDE.md)
 │   ├── auth/                # 인증 모듈 ✅ 완전 구현
+│   │   ├── auth.module.ts   # 모듈 통합 관리
 │   │   ├── controllers/     # API 엔드포인트
 │   │   ├── services/        # 비즈니스 로직 (6개 전문 서비스)
 │   │   ├── repositories/    # 데이터 접근
 │   │   ├── dto/            # 요청/응답 DTO
 │   │   ├── validators/      # 입력 검증
-│   │   └── auth.module.ts   # 모듈 통합 관리
+│   │   ├── middleware/      # 인증 미들웨어 (shared에서 이동)
+│   │   ├── utils/          # JWT, 비밀번호 유틸리티 (shared에서 이동)
+│   │   └── interfaces/     # 인증 관련 타입 정의 (shared에서 이동)
 │   ├── members/            # 멤버 관리 (구조만)
 │   └── task/               # 태스크 관리 (구조만)
 ├── shared/                 # 공유 구성요소 📋 [상세 가이드](src/shared/CLAUDE.md)
-│   ├── middleware/         # 인증, 보안, 검증 미들웨어
-│   ├── utils/             # JWT, 암호화, 응답 유틸리티
-│   └── interfaces/        # 공통 타입 정의
+│   ├── middleware/         # 보안, 검증, 로깅 미들웨어 (인증은 auth 모듈로 이동)
+│   ├── utils/             # 응답 포맷, 로깅, 에러 유틸리티 (JWT/암호화는 auth 모듈로 이동)
+│   └── interfaces/        # 공통 타입 정의 (인증 타입은 auth 모듈로 이동)
 ├── infrastructure/         # 인프라 계층 📋 [상세 가이드](src/infrastructure/CLAUDE.md)
 │   ├── database/          # 데이터베이스 계층 (Prisma, Repository Pattern)
 │   ├── cache/            # 캐시 계층 (Redis/InMemory)
@@ -290,8 +293,37 @@ GET /health
 
 ## 📚 추가 문서
 
+각 모듈의 상세한 아키텍처와 구현 가이드는 아래 문서를 참조하세요:
+
+### Core 모듈 상세 가이드
+**DI Container 기반 의존성 주입과 애플리케이션 부트스트랩**
+- 📋 **[Core 아키텍처 가이드](src/core/CLAUDE.md)**
+  - DI Container 시스템 (tsyringe 기반)
+  - 애플리케이션 부트스트랩 프로세스
+  - 환경 설정 관리 시스템
+  - 테스트 환경 구성 (Mock Container)
+  - 의존성 등록 순서와 워크플로우
+
+### Modules 계층 상세 가이드  
+**도메인별 비즈니스 로직과 API 엔드포인트**
+- 📋 **[Modules 아키텍처 가이드](src/modules/CLAUDE.md)**
+  - Auth 모듈 완전 구현 (10개 API, 6개 전문 서비스)
+  - Service 분해 전략 (Facade Pattern)
+  - Controller-Service-Repository 계층 구조
+  - DTO 시스템과 입력 검증
+  - Task/Members 모듈 확장 계획
+
+### Shared 모듈 상세 가이드
+**횡단 관심사와 공통 기능 인프라스트럭처**
+- 📋 **[Shared 아키텍처 가이드](src/shared/CLAUDE.md)**
+  - 에러 처리 시스템 (계층적 에러 구조)
+  - 미들웨어 체인 (검증, 로깅, 보안 헤더) - 인증은 auth 모듈로 이동
+  - 공통 유틸리티와 응답 표준화
+  - DB 제약조건 검증 시스템
+  - 보안 시스템 (JWT, 비밀번호 관리)는 auth 모듈로 이동됨
+
 ### Infrastructure 계층 상세 가이드
-**Infrastructure 계층의 구조, 기능, 워크플로우에 대한 종합 가이드**
+**데이터베이스, 캐시, 외부 서비스 연동**
 - 📋 **[Infrastructure 아키텍처 가이드](src/infrastructure/CLAUDE.md)**
   - 데이터베이스 계층 (PrismaService, BaseRepository, Repository Pattern)
   - 캐시 계층 (Redis/InMemory 캐시 시스템)

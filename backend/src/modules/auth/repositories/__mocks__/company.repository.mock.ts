@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals';
 import { Company } from '@prisma/client';
-import { ICompanyRepository } from '@shared/interfaces/repository.interfaces';
+import { ICompanyRepository } from '../../interfaces/repository.interfaces';
 
 /**
  * CompanyRepository Mock Implementation

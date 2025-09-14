@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals';
 import { User, Company } from '@prisma/client';
-import { IUserRepository } from '@shared/interfaces/repository.interfaces';
+import { IUserRepository } from '../../interfaces/repository.interfaces';
 
 /**
  * UserRepository Mock Implementation

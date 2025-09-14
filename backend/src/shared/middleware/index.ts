@@ -3,5 +3,5 @@ export { notFoundHandler } from './notFoundHandler';
 export { requestLogger } from './requestLogger';
 export { rateLimiter } from './rateLimiter';
 export { validateRequest } from './validateRequest';
-export { authenticateToken, requireSystemAdmin, requireCompanyManager, requireSameCompany } from './auth.middleware';
+// auth middleware는 auth 모듈로 이동됨
 export * from './dbConstraintValidator';

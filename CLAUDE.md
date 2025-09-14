@@ -21,7 +21,7 @@ PM_MonoRepo/
 │   ├── src/
 │   │   ├── core/              # DI Container + 설정
 │   │   ├── modules/           # 도메인 모듈 (auth ✅ 완전구현)
-│   │   ├── shared/            # 공통 미들웨어/유틸리티  
+│   │   ├── shared/            # 공통 미들웨어/유틸리티 (인증 관련은 auth 모듈로 이동)  
 │   │   ├── infrastructure/    # DB/캐시 계층
 │   │   └── app.ts             # Express 앱 설정
 │   ├── prisma/                # 데이터베이스 스키마

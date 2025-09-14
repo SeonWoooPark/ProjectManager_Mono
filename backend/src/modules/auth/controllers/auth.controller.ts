@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { injectable, inject } from 'tsyringe';
 import { AuthService } from '../services/auth.service';
 import { ResponseFormatter } from '@shared/utils/response';
-import { AuthenticatedRequest } from '@shared/interfaces/auth.types';
+import { AuthenticatedRequest } from '../interfaces/auth.types';
 import {
   CompanyManagerSignupRequestDto,
   TeamMemberSignupRequestDto,

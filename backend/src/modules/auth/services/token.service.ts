@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { injectable, inject } from 'tsyringe';
-import { jwtManager } from '@shared/utils/jwt';
+import { jwtManager } from '../utils/jwt';
 import {
   InvalidTokenError,
   TokenExpiredError,

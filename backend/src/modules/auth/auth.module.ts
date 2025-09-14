@@ -8,7 +8,7 @@ import { RegistrationService } from './services/registration.service';
 import { ApprovalService } from './services/approval.service';
 import { UserRepository } from './repositories/user.repository';
 import { CompanyRepository } from './repositories/company.repository';
-import { authenticateToken, requireSystemAdmin, requireCompanyManager } from '@shared/middleware/auth.middleware';
+import { authenticateToken, requireSystemAdmin, requireCompanyManager } from './middleware/auth.middleware';
 import { TokenRepository } from './repositories/token.repository';
 import { AuthValidator } from './validators/auth.validator';
 import { PrismaService } from '@infrastructure/database/prisma.service';

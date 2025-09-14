@@ -56,9 +56,7 @@ export abstract class BaseValidator {
   static passwordRule(fieldName: string = 'password', isOptional: boolean = false) {
     const rule = body(fieldName)
       .isLength({ min: 8, max: 128 })
-      .withMessage('비밀번호는 8~128자 사이여야 합니다')
-      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[@$!%*?&])[A-Za-z0-9@$!%*?&]+$/)
-      .withMessage('비밀번호는 대문자, 소문자, 숫자, 특수문자를 포함해야 합니다');
+      .withMessage('비밀번호는 8~128자 사이여야 합니다');
 
     return isOptional ? rule.optional() : rule;
   }

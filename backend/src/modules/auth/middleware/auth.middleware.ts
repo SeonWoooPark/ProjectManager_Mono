@@ -1,7 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { AuthenticatedRequest, UserRole } from '../interfaces/auth.types';
 import { jwtManager } from '../utils/jwt';
-import { AuthenticationError, AuthorizationError, InvalidTokenError, TokenExpiredError } from '../utils/errors';
+import { AuthenticationError, AuthorizationError, InvalidTokenError, TokenExpiredError } from '@shared/utils/errors';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();

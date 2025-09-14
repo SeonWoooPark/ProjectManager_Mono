@@ -1,5 +1,5 @@
 import { injectable, inject } from 'tsyringe';
-import { passwordManager } from '@shared/utils/password';
+import { passwordManager } from '../utils/password';
 import {
   PasswordPolicyError,
   PasswordMismatchError,
