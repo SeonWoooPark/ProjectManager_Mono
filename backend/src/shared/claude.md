@@ -45,7 +45,6 @@ Express 애플리케이션의 요청 처리 파이프라인을 구성하는 미�
 | 파일 | 역할 | 핵심 기능 |
 |-----|-----|-----------|
 | `errorHandler.ts` | 글로벌 에러 처리 | Prisma 에러 변환, 로깅, 응답 표준화 |
-
 | `rateLimiter.ts` | API 제한 | 요청 빈도 제한 (15분/100회, 엄격 모드: 15분/5회) |
 | `validateRequest.ts` | 입력 검증 | express-validator 기반 요청 데이터 검증 |
 | `requestLogger.ts` | 요청 로깅 | HTTP 요청/응답 로깅, 성능 측정 |
@@ -66,8 +65,6 @@ Express 애플리케이션의 요청 처리 파이프라인을 구성하는 미�
 |-----|-----|-----------------|
 | `errors.ts` | 에러 시스템 | `ApiError` 기반 30개+ 세분화된 에러 클래스 |
 | `response.ts` | API 응답 | `ResponseFormatter` - 표준화된 응답 생성 |
-
-
 | `logger.ts` | 로깅 | Winston 기반 구조화된 로깅 시스템 |
 | `dbConstraints.ts` | DB 제약조건 | ID 패턴, 길이 제한, 범위 검증 규칙 |
 | `prismaErrorHandler.ts` | Prisma 에러 | Prisma 에러를 도메인 에러로 변환 |
@@ -89,20 +86,20 @@ shared 모듈은 **3계층 아키텍처**로 구성되며, 단방향 의존성�
 ```mermaid
 graph TB
     subgraph "미들웨어 계층 (Middleware Layer)"
-        MW[auth.middleware.ts<br/>errorHandler.ts<br/>validateRequest.ts<br/>dbConstraintValidator.ts<br/>rateLimiter.ts<br/>requestLogger.ts<br/>notFoundHandler.ts]
+        MW[errorHandler.ts<br/>validateRequest.ts<br/>dbConstraintValidator.ts<br/>rateLimiter.ts<br/>requestLogger.ts<br/>notFoundHandler.ts]
     end
-    
+
     subgraph "유틸리티 계층 (Utility Layer)"
-        UT[errors.ts<br/>jwt.ts<br/>password.ts<br/>response.ts<br/>logger.ts<br/>dbConstraints.ts<br/>prismaErrorHandler.ts]
+        UT[errors.ts<br/>response.ts<br/>logger.ts<br/>dbConstraints.ts<br/>prismaErrorHandler.ts]
     end
-    
+
     subgraph "기반 계층 (Foundation Layer)"
-        FD[constants/app.constants.ts<br/>interfaces/auth.types.ts<br/>interfaces/repository.interfaces.ts]
+        FD[constants/app.constants.ts<br/>interfaces/index.ts]
     end
-    
+
     MW --> UT
     UT --> FD
-    
+
     style MW fill:#e1f5fe
     style UT fill:#f3e5f5
     style FD fill:#e8f5e8

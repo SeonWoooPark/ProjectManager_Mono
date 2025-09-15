@@ -1,4 +1,5 @@
 import { Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { AuthenticatedRequest, UserRole } from '../interfaces/auth.types';
 import { jwtManager } from '../utils/jwt';
 import { AuthenticationError, AuthorizationError, InvalidTokenError, TokenExpiredError } from '@shared/utils/errors';
@@ -9,7 +10,7 @@ const prisma = new PrismaClient();
 // Verify JWT token middleware
 export const authenticateToken = async (
   req: AuthenticatedRequest,
-  _res: Response,
+  res: Response,
   next: NextFunction
 ) => {
   try {
@@ -17,7 +18,11 @@ export const authenticateToken = async (
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
     if (!token) {
-      throw new AuthenticationError('인증 토큰이 없습니다');
+      return res.status(401).json({
+        success: false,
+        message: '인증 토큰이 없습니다',
+        code: 'NO_TOKEN'
+      });
     }
 
     // Verify token
@@ -29,7 +34,11 @@ export const authenticateToken = async (
     });
 
     if (blacklistedToken) {
-      throw new InvalidTokenError('access');
+      return res.status(401).json({
+        success: false,
+        message: '유효하지 않은 토큰입니다',
+        code: 'INVALID_TOKEN'
+      });
     }
 
     // Add user info to request
@@ -47,25 +56,46 @@ export const authenticateToken = async (
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === 'ACCESS_TOKEN_EXPIRED') {
-        return next(new TokenExpiredError('access'));
+        return res.status(401).json({
+          success: false,
+          message: '토큰이 만료되었습니다',
+          code: 'TOKEN_EXPIRED'
+        });
       }
       if (error.message === 'INVALID_ACCESS_TOKEN') {
-        return next(new InvalidTokenError('access'));
+        return res.status(401).json({
+          success: false,
+          message: '유효하지 않은 토큰입니다',
+          code: 'INVALID_TOKEN'
+        });
       }
     }
-    next(error);
+    // 기타 에러의 경우 500 반환
+    return res.status(500).json({
+      success: false,
+      message: '인증 처리 중 오류가 발생했습니다',
+      code: 'AUTH_ERROR'
+    });
   }
 };
 
 // Check if user has specific role
 export const requireRole = (...allowedRoles: UserRole[]) => {
-  return (req: AuthenticatedRequest, _res: Response, next: NextFunction) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     if (!req.user) {
-      return next(new AuthenticationError());
+      return res.status(401).json({
+        success: false,
+        message: '인증이 필요합니다',
+        code: 'AUTHENTICATION_REQUIRED'
+      });
     }
 
     if (!allowedRoles.includes(req.user.role_id)) {
-      return next(new AuthorizationError('해당 작업을 수행할 권한이 없습니다'));
+      return res.status(403).json({
+        success: false,
+        message: '해당 작업을 수행할 권한이 없습니다',
+        code: 'FORBIDDEN'
+      });
     }
 
     next();
@@ -84,12 +114,16 @@ export const requireManagerOrAdmin = requireRole(UserRole.SYSTEM_ADMIN, UserRole
 // Check if user belongs to same company
 export const requireSameCompany = async (
   req: AuthenticatedRequest,
-  _res: Response,
+  res: Response,
   next: NextFunction
 ) => {
   try {
     if (!req.user) {
-      return next(new AuthenticationError());
+      return res.status(401).json({
+        success: false,
+        message: '인증이 필요합니다',
+        code: 'AUTHENTICATION_REQUIRED'
+      });
     }
 
     // System admin can access all companies
@@ -109,29 +143,45 @@ export const requireSameCompany = async (
     });
 
     if (!targetUser) {
-      return next(new AuthorizationError('사용자를 찾을 수 없습니다'));
+      return res.status(404).json({
+        success: false,
+        message: '사용자를 찾을 수 없습니다',
+        code: 'USER_NOT_FOUND'
+      });
     }
 
     // Check if both users belong to the same company
     if (targetUser.company_id !== req.user.company_id) {
-      return next(new AuthorizationError('다른 회사의 사용자에게 접근할 수 없습니다'));
+      return res.status(403).json({
+        success: false,
+        message: '다른 회사의 사용자에게 접근할 수 없습니다',
+        code: 'FORBIDDEN'
+      });
     }
 
     next();
   } catch (error) {
-    next(error);
+    return res.status(500).json({
+      success: false,
+      message: '권한 확인 중 오류가 발생했습니다',
+      code: 'AUTH_ERROR'
+    });
   }
 };
 
 // Check if user is active
 export const requireActiveUser = async (
   req: AuthenticatedRequest,
-  _res: Response,
+  res: Response,
   next: NextFunction
 ) => {
   try {
     if (!req.user) {
-      return next(new AuthenticationError());
+      return res.status(401).json({
+        success: false,
+        message: '인증이 필요합니다',
+        code: 'AUTHENTICATION_REQUIRED'
+      });
     }
 
     // UserStatus.ACTIVE = 1
@@ -141,14 +191,20 @@ export const requireActiveUser = async (
         3: '승인 대기 중인 계정입니다'
       };
       
-      return next(new AuthorizationError(
-        statusMessages[req.user.status_id] || '계정을 사용할 수 없습니다'
-      ));
+      return res.status(403).json({
+        success: false,
+        message: statusMessages[req.user.status_id] || '계정을 사용할 수 없습니다',
+        code: 'ACCOUNT_NOT_ACTIVE'
+      });
     }
 
     next();
   } catch (error) {
-    next(error);
+    return res.status(500).json({
+      success: false,
+      message: '권한 확인 중 오류가 발생했습니다',
+      code: 'AUTH_ERROR'
+    });
   }
 };
 

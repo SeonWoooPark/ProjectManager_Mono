@@ -65,7 +65,7 @@ export class PasswordService {
       message: '비밀번호 재설정 링크가 이메일로 전송되었습니다.',
       tokenCreated: true,
       // In development, return the token for testing
-      ...(process.env.NODE_ENV === 'development' && { resetToken })
+      ...(process.env.NODE_ENV !== 'production' && { resetToken })
     };
   }
 

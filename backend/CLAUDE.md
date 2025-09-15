@@ -33,8 +33,9 @@ backend/src/
 │   │   ├── middleware/      # 인증 미들웨어 (shared에서 이동)
 │   │   ├── utils/          # JWT, 비밀번호 유틸리티 (shared에서 이동)
 │   │   └── interfaces/     # 인증 관련 타입 정의 (shared에서 이동)
-│   ├── members/            # 멤버 관리 (구조만)
-│   └── task/               # 태스크 관리 (구조만)
+│   ├── members/            # 멤버 관리 ✅ 기본 구조 구현
+│   ├── projects/           # 프로젝트 관리 ✅ 기본 구조 구현
+│   └── tasks/              # 태스크 관리 ✅ 기본 구조 구현
 ├── shared/                 # 공유 구성요소 📋 [상세 가이드](src/shared/CLAUDE.md)
 │   ├── middleware/         # 보안, 검증, 로깅 미들웨어 (인증은 auth 모듈로 이동)
 │   ├── utils/             # 응답 포맷, 로깅, 에러 유틸리티 (JWT/암호화는 auth 모듈로 이동)
@@ -98,12 +99,14 @@ export class AuthModule {
 - **ApprovalService**: 승인 워크플로우
 - **AuthService**: Facade Pattern (통합 인터페이스)
 
-## API 엔드포인트 (Auth Module - 완전 구현)
+## API 엔드포인트
 
-### 공개 API
+### 인증 API (Auth Module - 완전 구현)
+
+#### 공개 API
 ```
 POST /api/v1/auth/signup/company-manager  # 회사 관리자 회원가입
-POST /api/v1/auth/signup/team-member      # 팀원 회원가입  
+POST /api/v1/auth/signup/team-member      # 팀원 회원가입
 POST /api/v1/auth/login                   # 로그인
 POST /api/v1/auth/refresh                 # 토큰 갱신
 POST /api/v1/auth/password/forgot         # 비밀번호 재설정 요청
@@ -111,11 +114,31 @@ GET  /api/v1/auth/password/verify         # 재설정 토큰 검증
 POST /api/v1/auth/password/reset          # 비밀번호 재설정
 ```
 
-### 보호된 API (JWT 인증 필요)
+#### 보호된 API (JWT 인증 필요)
 ```
 POST /api/v1/auth/logout                  # 로그아웃
 POST /api/v1/auth/admin/approve/company   # 회사 승인 (SYSTEM_ADMIN)
 POST /api/v1/auth/manager/approve/member  # 팀원 승인 (COMPANY_MANAGER)
+```
+
+### 멤버 API (Members Module)
+```
+GET  /api/v1/members                      # 회사 멤버 목록 조회
+GET  /api/v1/members/pending              # 승인 대기 멤버 목록 (COMPANY_MANAGER)
+```
+
+### 프로젝트 API (Projects Module)
+```
+POST /api/v1/projects                     # 프로젝트 생성 (COMPANY_MANAGER)
+GET  /api/v1/projects                     # 프로젝트 목록 조회
+GET  /api/v1/projects/:projectId          # 프로젝트 상세 조회
+```
+
+### 태스크 API (Tasks Module)
+```
+GET  /api/v1/tasks/assigned               # 할당된 태스크 목록
+PATCH /api/v1/tasks/:taskId/status        # 태스크 상태 변경
+PATCH /api/v1/tasks/:taskId               # 태스크 정보 수정
 ```
 
 ## 보안 시스템

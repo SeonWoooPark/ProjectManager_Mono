@@ -2,7 +2,8 @@ import bcrypt from 'bcryptjs';
 
 export class PasswordManager {
   private readonly saltRounds: number = 10;
-  private readonly passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  // 간소화된 정규식 - 8자 이상 128자 이하만 체크
+  private readonly passwordRegex = /^.{8,128}$/;
 
   // Hash password
   async hashPassword(password: string): Promise<string> {
@@ -27,21 +28,13 @@ export class PasswordManager {
       errors.push('비밀번호는 최소 8자 이상이어야 합니다');
     }
 
-    if (!/[a-z]/.test(password)) {
-      errors.push('비밀번호는 최소 하나의 소문자를 포함해야 합니다');
+    if (password.length > 128) {
+      errors.push('비밀번호는 128자 이하여야 합니다');
     }
 
-    if (!/[A-Z]/.test(password)) {
-      errors.push('비밀번호는 최소 하나의 대문자를 포함해야 합니다');
-    }
-
-    if (!/\d/.test(password)) {
-      errors.push('비밀번호는 최소 하나의 숫자를 포함해야 합니다');
-    }
-
-    if (!/[@$!%*?&]/.test(password)) {
-      errors.push('비밀번호는 최소 하나의 특수문자(@$!%*?&)를 포함해야 합니다');
-    }
+    // 복잡도 규칙 제거 - 길이만 체크
+    // 이전에는 대소문자, 숫자, 특수문자를 필수로 요구했으나
+    // 사용자 편의성을 위해 길이 요구사항만 유지
 
     return {
       valid: errors.length === 0,

@@ -19,7 +19,7 @@ backend/src/core/
 ├── index.ts                    # 모듈 진입점 (Config export)
 ├── container.ts                # DI Container 메인 파일 ⭐ 핵심
 ├── app.bootstrap.ts            # 애플리케이션 부트스트랩
-├── test-container.ts           # 테스트용 DI Container
+├── AGENTS.md                   # 에이전트 아키텍처 문서
 └── config/
     ├── index.ts               # 설정 모듈 export
     └── config.ts              # 환경 설정 정의
@@ -31,7 +31,6 @@ backend/src/core/
 |------|------|----------|
 | `container.ts` | DI Container 관리 | 의존성 등록/해결, Singleton 관리 |
 | `app.bootstrap.ts` | 애플리케이션 초기화 | DI 초기화, 환경별 설정 적용 |
-| `test-container.ts` | 테스트 환경 관리 | Mock 객체 주입, 테스트 격리 |
 | `config/config.ts` | 설정 관리 | 환경변수 로드, 설정 중앙화 |
 
 ## DI Container 시스템

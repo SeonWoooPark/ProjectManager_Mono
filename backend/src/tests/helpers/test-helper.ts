@@ -6,9 +6,9 @@ import { prismaService } from '@infrastructure/database/prisma.service';
 
 // UUID generation function
 const uuidv4 = () => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
 };
@@ -21,7 +21,7 @@ export class TestHelper {
     this.app = app;
     this.prisma = prismaService.getClient();
   }
-  
+
   // Prisma 클라이언트 접근자 (디버그용)
   prismaClient() {
     return this.prisma;
@@ -49,7 +49,11 @@ export class TestHelper {
   }
 
   // API를 통한 회사 관리자 회원가입
-  async signupCompanyManager(companyName: string = '테스트회사', managerEmail: string = 'manager@test.com', password: string = 'Manager123!@#') {
+  async signupCompanyManager(
+    companyName: string = '테스트회사',
+    managerEmail: string = 'manager@test.com',
+    password: string = 'Manager123!@#'
+  ) {
     const response = await this.post('/api/v1/auth/signup/company-manager', {
       user: {
         email: managerEmail,
@@ -64,7 +68,9 @@ export class TestHelper {
     });
 
     if (response.status !== 201) {
-      throw new Error(`회사 관리자 회원가입 실패: ${response.body.message || response.body.error?.message || 'Unknown error'}`);
+      throw new Error(
+        `회사 관리자 회원가입 실패: ${response.body.message || response.body.error?.message || 'Unknown error'}`
+      );
     }
 
     // API 응답에서 success와 data 구조 확인
@@ -79,7 +85,11 @@ export class TestHelper {
   }
 
   // API를 통한 팀원 회원가입
-  async signupTeamMember(invitationCode: string, email: string = 'member@test.com', password: string = 'Member123!@#') {
+  async signupTeamMember(
+    invitationCode: string,
+    email: string = 'member@test.com',
+    password: string = 'Member123!@#'
+  ) {
     const response = await this.post('/api/v1/auth/signup/team-member', {
       user: {
         email,
@@ -91,7 +101,9 @@ export class TestHelper {
     });
 
     if (response.status !== 201) {
-      throw new Error(`팀원 회원가입 실패: ${response.body.message || response.body.error?.message || 'Unknown error'}`);
+      throw new Error(
+        `팀원 회원가입 실패: ${response.body.message || response.body.error?.message || 'Unknown error'}`
+      );
     }
 
     // API 응답에서 success와 data 구조 확인
@@ -109,20 +121,22 @@ export class TestHelper {
   }
 
   // API를 통한 회사 승인 (시스템 관리자 권한)
-  async approveCompanyByAdmin(adminToken: string, companyId: string, generateInvitationCode: boolean = true) {
-    const response = await this.postWithAuth(
-      '/api/v1/auth/admin/approve/company',
-      adminToken,
-      {
-        company_id: companyId,
-        action: 'approve',
-        comment: '승인되었습니다',
-        generate_invitation_code: generateInvitationCode,
-      }
-    );
+  async approveCompanyByAdmin(
+    adminToken: string,
+    companyId: string,
+    generateInvitationCode: boolean = true
+  ) {
+    const response = await this.postWithAuth('/api/v1/auth/admin/approve/company', adminToken, {
+      company_id: companyId,
+      action: 'approve',
+      comment: '승인되었습니다',
+      generate_invitation_code: generateInvitationCode,
+    });
 
     if (response.status !== 200) {
-      throw new Error(`회사 승인 실패: ${response.body.message || response.body.error?.message || 'Unknown error'}`);
+      throw new Error(
+        `회사 승인 실패: ${response.body.message || response.body.error?.message || 'Unknown error'}`
+      );
     }
 
     // API 응답 구조 확인
@@ -139,18 +153,16 @@ export class TestHelper {
 
   // API를 통한 팀원 승인 (회사 관리자 권한)
   async approveMemberByManager(managerToken: string, userId: string) {
-    const response = await this.postWithAuth(
-      '/api/v1/auth/manager/approve/member',
-      managerToken,
-      {
-        user_id: userId,
-        action: 'approve',
-        comment: '팀원으로 승인합니다',
-      }
-    );
+    const response = await this.postWithAuth('/api/v1/auth/manager/approve/member', managerToken, {
+      user_id: userId,
+      action: 'approve',
+      comment: '팀원으로 승인합니다',
+    });
 
     if (response.status !== 200) {
-      throw new Error(`팀원 승인 실패: ${response.body.message || response.body.error?.message || 'Unknown error'}`);
+      throw new Error(
+        `팀원 승인 실패: ${response.body.message || response.body.error?.message || 'Unknown error'}`
+      );
     }
 
     // API 응답 구조 확인
@@ -174,7 +186,9 @@ export class TestHelper {
         body: response.body,
         email,
       });
-      throw new Error(`로그인 실패: ${response.body.message || response.body.error?.message || 'Unknown error'}`);
+      throw new Error(
+        `로그인 실패: ${response.body.message || response.body.error?.message || 'Unknown error'}`
+      );
     }
 
     // Refresh Token 쿠키 추출
@@ -197,7 +211,7 @@ export class TestHelper {
     const req = request(this.app)
       .post('/api/v1/auth/logout')
       .set('Authorization', `Bearer ${accessToken}`);
-    
+
     if (refreshToken) {
       req.set('Cookie', `refresh_token=${refreshToken}`);
     }
@@ -205,7 +219,7 @@ export class TestHelper {
     const response = await req;
 
     if (response.status !== 200) {
-      throw new Error(`로그아웃 실패: ${response.body.error?.message}`);
+      throw new Error(`로그아웃 실패: ${response.body.message || response.body.error?.message || response.body.error || 'Unknown error'}`);
     }
 
     return response.body.data;
@@ -215,8 +229,12 @@ export class TestHelper {
   async refreshToken(refreshToken: string) {
     const response = await this.postWithCookie('/api/v1/auth/refresh', refreshToken);
 
+    console.log('response Data', response);
+
     if (response.status !== 200) {
-      throw new Error(`토큰 갱신 실패: ${response.body.message || response.body.error?.message || 'Unknown error'}`);
+      throw new Error(
+        `토큰 갱신 실패: ${response.body.message || response.body.error?.message || 'Unknown error'}`
+      );
     }
 
     // 새 Refresh Token 추출
@@ -240,7 +258,7 @@ export class TestHelper {
     });
 
     if (response.status !== 200) {
-      throw new Error(`비밀번호 재설정 요청 실패: ${response.body.error?.message}`);
+      throw new Error(`비밀번호 재설정 요청 실패: ${response.body.message || response.body.error?.message || response.body.error || 'Unknown error'}`);
     }
 
     return response.body;
@@ -255,7 +273,7 @@ export class TestHelper {
     });
 
     if (response.status !== 200) {
-      throw new Error(`비밀번호 재설정 실패: ${response.body.error?.message}`);
+      throw new Error(`비밀번호 재설정 실패: ${response.body.message || response.body.error?.message || response.body.error || 'Unknown error'}`);
     }
 
     return response.body;
@@ -274,7 +292,10 @@ export class TestHelper {
       exp: Math.floor(Date.now() / 1000) + 900, // 15분
     };
 
-    return jwt.sign(payload, process.env.JWT_ACCESS_SECRET || 'test-access-secret-key-min-32-characters-long');
+    return jwt.sign(
+      payload,
+      process.env.JWT_ACCESS_SECRET || 'test-access-secret-key-min-32-characters-long'
+    );
   }
 
   // Refresh 토큰 생성
@@ -284,10 +305,13 @@ export class TestHelper {
       jti: uuidv4(),
       token_family: uuidv4(),
       iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60), // 30일
+      exp: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60, // 30일
     };
 
-    return jwt.sign(payload, process.env.JWT_REFRESH_SECRET || 'test-refresh-secret-key-min-32-characters-long');
+    return jwt.sign(
+      payload,
+      process.env.JWT_REFRESH_SECRET || 'test-refresh-secret-key-min-32-characters-long'
+    );
   }
 
   // 비밀번호 재설정 토큰 생성
@@ -300,28 +324,23 @@ export class TestHelper {
       exp: Math.floor(Date.now() / 1000) + 3600, // 1시간
     };
 
-    return jwt.sign(payload, process.env.JWT_RESET_SECRET || 'test-reset-secret-key-min-32-characters-long');
+    return jwt.sign(
+      payload,
+      process.env.JWT_RESET_SECRET || 'test-reset-secret-key-min-32-characters-long'
+    );
   }
 
   // API 요청 헬퍼 함수들
   async post(url: string, data?: any) {
-    return request(this.app)
-      .post(url)
-      .send(data);
+    return request(this.app).post(url).send(data);
   }
 
   async postWithAuth(url: string, token: string, data?: any) {
-    return request(this.app)
-      .post(url)
-      .set('Authorization', `Bearer ${token}`)
-      .send(data);
+    return request(this.app).post(url).set('Authorization', `Bearer ${token}`).send(data);
   }
 
   async postWithCookie(url: string, refreshToken: string, data?: any) {
-    return request(this.app)
-      .post(url)
-      .set('Cookie', `refresh_token=${refreshToken}`)
-      .send(data);
+    return request(this.app).post(url).set('Cookie', `refresh_token=${refreshToken}`).send(data);
   }
 
   async get(url: string) {
@@ -329,9 +348,7 @@ export class TestHelper {
   }
 
   async getWithAuth(url: string, token: string) {
-    return request(this.app)
-      .get(url)
-      .set('Authorization', `Bearer ${token}`);
+    return request(this.app).get(url).set('Authorization', `Bearer ${token}`);
   }
 
   // 데이터베이스 정리
@@ -363,24 +380,36 @@ export class TestHelper {
 
   // 테스트 데이터 시드
   async seedTestData() {
+    // 데이터베이스 초기화 - 이전 테스트 데이터 제거
+    await this.cleanDatabase();
+
     // 1. 시스템 관리자 생성 (DB 직접)
     const admin = await this.createSystemAdmin();
-    
+
     // 시스템 관리자 로그인하여 실제 토큰 받기
     const adminLoginResult = await this.login('admin@system.com', 'Admin123!@#');
     const adminToken = adminLoginResult.accessToken;
 
     // 2. 첫 번째 회사 및 관리자 생성 (API 사용)
-    const { company: company1, manager: manager1 } = await this.signupCompanyManager('승인된회사', 'approved@test.com');
-    
+    const { company: company1, manager: manager1 } = await this.signupCompanyManager(
+      '승인된회사',
+      'approved@test.com'
+    );
+
     // 3. 시스템 관리자가 첫 번째 회사 승인 (API 사용)
-    const { invitationCode: invitationCode1 } = await this.approveCompanyByAdmin(adminToken, company1.id);
-    
+    const { invitationCode: invitationCode1 } = await this.approveCompanyByAdmin(
+      adminToken,
+      company1.id
+    );
+
     // 4. 첫 번째 회사 관리자 로그인
     const { accessToken: managerToken1 } = await this.login('approved@test.com', 'Manager123!@#');
 
     // 5. 두 번째 회사 및 관리자 생성 (승인 대기 상태)
-    const { company: company2, manager: manager2 } = await this.signupCompanyManager('대기중회사', 'pending@test.com');
+    const { company: company2, manager: manager2 } = await this.signupCompanyManager(
+      '대기중회사',
+      'pending@test.com'
+    );
 
     // 6. 첫 번째 회사에 팀원 추가 및 승인
     const member1 = await this.signupTeamMember(invitationCode1, 'active.member@test.com');

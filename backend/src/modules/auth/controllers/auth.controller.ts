@@ -87,8 +87,15 @@ export class AuthController {
         path: '/api/v1/auth',
       });
 
-      // Remove refresh token from response
-      const { refreshToken, ...responseData } = result;
+      // Remove refresh token from response and format response consistently with login
+      const { refreshToken, accessToken, ...otherData } = result;
+
+      const responseData = {
+        access_token: accessToken,
+        token_type: 'Bearer',
+        expires_in: 900, // 15 minutes in seconds
+        ...otherData
+      };
 
       ResponseFormatter.success(res, responseData);
     } catch (error) {

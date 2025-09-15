@@ -41,18 +41,7 @@ infrastructure/
 ├── database/                   # 데이터베이스 계층
 │   ├── index.ts               # Database 모듈 Export
 │   ├── prisma.service.ts      # Prisma 클라이언트 싱글톤 서비스
-│   ├── base.repository.ts     # 베이스 Repository 추상 클래스
-│   ├── __mocks__/             # Database Mock 객체들
-│   │   └── prisma.service.mock.ts
-│   └── repositories/          # 도메인별 Repository 구현체들
-│       ├── index.ts           # Repository Export 및 팩토리 함수들
-│       ├── user.repository.ts # 사용자 Repository
-│       ├── company.repository.ts # 회사 Repository
-│       ├── token.repository.ts # 토큰 Repository
-│       └── __tests__/         # Repository 테스트
-│           ├── user.repository.test.ts
-│           ├── company.repository.test.ts
-│           └── token.repository.test.ts
+│   └── base.repository.ts     # 베이스 Repository 추상 클래스 (모든 Repository의 부모)
 ├── cache/                      # 캐시 계층
 │   ├── index.ts               # Cache 모듈 Export
 │   └── redis.client.ts        # Redis/InMemory 캐시 클라이언트
@@ -60,6 +49,12 @@ infrastructure/
     ├── index.ts               # External Services Export
     └── email.service.ts       # 이메일 발송 서비스
 ```
+
+> **Note**: Repository 구현체들은 이제 각 도메인 모듈에 위치합니다 (`modules/*/repositories/`)
+> - `modules/auth/repositories/`: 인증 관련 Repository (User, Company, Token)
+> - `modules/members/repositories/`: 멤버 관련 Repository
+> - `modules/projects/repositories/`: 프로젝트 관련 Repository
+> - `modules/tasks/repositories/`: 태스크 관련 Repository
 
 ---
 
@@ -143,95 +138,46 @@ interface PaginationResult<T> {
 
 ---
 
-### 🗂️ 구체적 Repository 구현체들
+### 🗂️ Repository 패턴 구현
 
-#### UserRepository - 사용자 데이터 관리
-**위치**: `database/repositories/user.repository.ts`
+Repository 구현체들은 이제 각 도메인 모듈 내에 위치하며, `BaseRepository`를 상속받아 구현됩니다.
+
+#### Repository 위치 변경
+**기존**: `infrastructure/database/repositories/*`
+**현재**: `modules/*/repositories/*`
+
+#### Repository 구현 예시
+
+각 도메인 모듈의 Repository는 `BaseRepository`를 상속받아 도메인 특화 메서드를 추가합니다:
 
 ```typescript
-export class UserRepository extends BaseRepository<User> implements IUserRepository {
-  // 특화된 사용자 조회 메서드들
+// modules/auth/repositories/user.repository.ts
+export class UserRepository extends BaseRepository<User> {
   async findByEmail(email: string): Promise<User | null>
-  async findByIdWithCompany(id: string): Promise<(User & { company: Company | null }) | null>
-  async createWithCompany(userData: any, companyData?: any): Promise<{ user: User; company?: Company }>
-  async updateStatus(userId: string, statusId: number): Promise<User>
-  async updatePassword(userId: string, passwordHash: string): Promise<User>
   async findPendingMembers(companyId: string): Promise<User[]>
-  async updateLastLogin(userId: string): Promise<User>
+  // ... 기타 사용자 특화 메서드
 }
-```
 
-**🎯 비즈니스 로직 특화 기능**:
-- 회사와 함께 사용자 생성 (트랜잭션 처리)
-- 승인 대기 중인 팀원 조회
-- 마지막 로그인 시간 업데이트
-- 페이지네이션과 필터링을 통한 사용자 목록 조회
-
-#### CompanyRepository - 회사 데이터 관리
-**위치**: `database/repositories/company.repository.ts`
-
-```typescript
-export class CompanyRepository extends BaseRepository<Company> implements ICompanyRepository {
-  // 회사 특화 메서드들
-  async findByName(name: string): Promise<Company | null>
-  async findPendingCompanies(): Promise<Company[]>
-  async updateApprovalStatus(companyId: string, statusId: number, invitationCode?: string): Promise<Company>
-  async generateInvitationCode(): Promise<string>
+// modules/auth/repositories/company.repository.ts
+export class CompanyRepository extends BaseRepository<Company> {
   async findByInvitationCode(code: string): Promise<Company | null>
-  async getCompanyStatistics(companyId: string): Promise<any>
+  async generateInvitationCode(): Promise<string>
+  // ... 기타 회사 특화 메서드
 }
-```
 
-**🎯 비즈니스 로직 특화 기능**:
-- 초대 코드 생성 및 중복 검사
-- 회사 승인 상태 관리
-- 회사 통계 정보 집계 (직원 수, 프로젝트 수 등)
-- 매니저와 직원들을 포함한 회사 정보 조회
-
-#### TokenRepository - 토큰 관리
-**위치**: `database/repositories/token.repository.ts`
-
-```typescript
-export class TokenRepository extends BaseRepository<RefreshToken> implements ITokenRepository {
-  // JWT 토큰 관리 메서드들
-  async saveRefreshToken(userId: string, token: string, expiresAt: Date, ...): Promise<void>
-  async findRefreshToken(token: string): Promise<RefreshToken | null>
-  async invalidateToken(token: string): Promise<void>
+// modules/auth/repositories/token.repository.ts
+export class TokenRepository extends BaseRepository<RefreshToken> {
+  async saveRefreshToken(userId: string, token: string): Promise<void>
   async invalidateTokenFamily(tokenFamily: string): Promise<void>
-  async saveResetToken(userId: string, token: string, expiresAt: Date): Promise<void>
-  async addToBlacklist(token: string, expiresAt: Date, ...): Promise<void>
-  async cleanExpiredTokens(): Promise<void>
+  // ... 기타 토큰 관리 메서드
 }
 ```
 
-**🔐 보안 특화 기능**:
-- 토큰 해시 저장 (평문 토큰 비저장)
-- 토큰 패밀리 기반 무효화 (토큰 탈취 감지)
-- 블랙리스트를 통한 토큰 무효화
-- 만료된 토큰 자동 정리
-- 디바이스 핑거프린트 기반 토큰 관리
-
----
-
-### 🏭 Repository 팩토리 패턴
-
-**위치**: `database/repositories/index.ts`
-
-```typescript
-// 싱글톤 인스턴스 관리
-export const getUserRepository = (): UserRepository => {
-  if (!userRepositoryInstance) {
-    userRepositoryInstance = new UserRepository();
-  }
-  return userRepositoryInstance;
-};
-```
-
-#### 💡 팩토리 패턴의 장점
-- **지연 초기화**: 필요할 때만 인스턴스 생성
-- **싱글톤 보장**: 각 Repository의 단일 인스턴스 관리
-- **의존성 주입 호환**: DI Container에서 쉽게 관리 가능
-- **테스트 용이성**: Mock 인스턴스로 쉽게 교체 가능
+#### 💡 모듈화의 장점
+- **도메인 응집도**: 관련 로직이 한 모듈에 집중
+- **독립적 테스트**: 모듈별 독립적인 테스트 가능
+- **명확한 경계**: 각 모듈의 책임과 경계가 명확
+- **재사용성**: BaseRepository를 통한 공통 로직 재사용
 
 ---
 

@@ -3,8 +3,8 @@ import { injectable, inject } from 'tsyringe';
 import { BaseRepository } from '@infrastructure/database/base.repository';
 import { ITokenRepository } from '../interfaces/repository.interfaces';
 import { PrismaService } from '@infrastructure/database/prisma.service';
-import { IdValidator } from '@shared/utils/dbConstraints.js';
-import { jwtManager } from '../utils/jwt.js';
+import { IdValidator } from '@shared/utils/dbConstraints';
+import { jwtManager } from '../utils/jwt';
 import crypto from 'crypto';
 
 @injectable()
