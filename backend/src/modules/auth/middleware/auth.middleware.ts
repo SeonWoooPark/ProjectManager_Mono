@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 // Verify JWT token middleware
 export const authenticateToken = async (
   req: AuthenticatedRequest,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ) => {
   try {
@@ -59,7 +59,7 @@ export const authenticateToken = async (
 
 // Check if user has specific role
 export const requireRole = (...allowedRoles: UserRole[]) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  return (req: AuthenticatedRequest, _res: Response, next: NextFunction) => {
     if (!req.user) {
       return next(new AuthenticationError());
     }
@@ -84,7 +84,7 @@ export const requireManagerOrAdmin = requireRole(UserRole.SYSTEM_ADMIN, UserRole
 // Check if user belongs to same company
 export const requireSameCompany = async (
   req: AuthenticatedRequest,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ) => {
   try {
@@ -126,7 +126,7 @@ export const requireSameCompany = async (
 // Check if user is active
 export const requireActiveUser = async (
   req: AuthenticatedRequest,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ) => {
   try {
@@ -155,7 +155,7 @@ export const requireActiveUser = async (
 // Optional authentication - doesn't fail if no token, but adds user if token exists
 export const optionalAuth = async (
   req: AuthenticatedRequest,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ) => {
   try {

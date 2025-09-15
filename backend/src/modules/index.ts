@@ -9,6 +9,6 @@
 export * from './auth';
 
 // Future modules
-// export * from './user';
-// export * from './project';
-// export * from './company';
+export * from './projects';
+export * from './tasks';
+export * from './members';

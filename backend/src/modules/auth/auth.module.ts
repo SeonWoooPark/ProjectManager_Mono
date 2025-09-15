@@ -1,17 +1,9 @@
-import { Router } from 'express';
-import { AuthController } from './controllers/auth.controller';
-import { AuthService } from './services/auth.service';
-import { AuthenticationService } from './services/authentication.service';
-import { TokenService } from './services/token.service';
-import { PasswordService } from './services/password.service';
-import { RegistrationService } from './services/registration.service';
-import { ApprovalService } from './services/approval.service';
-import { UserRepository } from './repositories/user.repository';
-import { CompanyRepository } from './repositories/company.repository';
+import { Router, Response, NextFunction } from 'express';
+import type { AuthController } from './controllers/auth.controller';
 import { authenticateToken, requireSystemAdmin, requireCompanyManager } from './middleware/auth.middleware';
-import { TokenRepository } from './repositories/token.repository';
 import { AuthValidator } from './validators/auth.validator';
-import { PrismaService } from '@infrastructure/database/prisma.service';
+import { resolve } from '@core/container';
+import type { AuthenticatedRequest } from './interfaces/auth.types';
 
 /**
  * Auth Module
@@ -27,25 +19,8 @@ import { PrismaService } from '@infrastructure/database/prisma.service';
 export class AuthModule {
   private static _instance: AuthModule;
   private _router: Router;
-  private _authController: AuthController;
-
-  // Repositories
-  private _userRepository: UserRepository;
-  private _companyRepository: CompanyRepository;
-  private _tokenRepository: TokenRepository;
-
-  // Services
-  private _authService: AuthService;
-  private _authenticationService: AuthenticationService;
-  private _tokenService: TokenService;
-  private _passwordService: PasswordService;
-  private _registrationService: RegistrationService;
-  private _approvalService: ApprovalService;
 
   private constructor() {
-    this.initializeRepositories();
-    this.initializeServices();
-    this.initializeController();
     this.initializeRoutes();
   }
 
@@ -66,62 +41,7 @@ export class AuthModule {
     return this._router;
   }
 
-  /**
-   * Repository 계층 초기화
-   */
-  private initializeRepositories(): void {
-    const prismaService = PrismaService.getInstance();
-    this._userRepository = new UserRepository(prismaService);
-    this._companyRepository = new CompanyRepository(prismaService);
-    this._tokenRepository = new TokenRepository(prismaService);
-  }
-
-  /**
-   * Service 계층 초기화 (의존성 주입)
-   */
-  private initializeServices(): void {
-    const prismaService = PrismaService.getInstance();
-    
-    // 기본 서비스 생성
-    this._tokenService = new TokenService(this._tokenRepository, this._userRepository);
-    this._passwordService = new PasswordService(this._userRepository, this._tokenService);
-    
-    // 의존성을 가진 서비스 생성
-    this._authenticationService = new AuthenticationService(
-      this._userRepository,
-      this._tokenService,
-      this._passwordService,
-      prismaService
-    );
-    
-    this._registrationService = new RegistrationService(
-      this._userRepository,
-      this._companyRepository,
-      this._passwordService
-    );
-    
-    this._approvalService = new ApprovalService(
-      this._userRepository,
-      this._companyRepository,
-      prismaService
-    );
-    
-    // Facade 서비스 생성
-    this._authService = new AuthService(
-      this._authenticationService,
-      this._registrationService,
-      this._passwordService,
-      this._approvalService,
-      this._tokenService
-    );
-  }
-
-  /**
-   * Controller 초기화
-   */
-  private initializeController(): void {
-    this._authController = new AuthController(this._authService);
-  }
+  // No explicit repository/service/controller construction; resolved lazily from DI
 
   /**
    * 라우트 설정
@@ -133,48 +53,56 @@ export class AuthModule {
     this._router.post(
       '/signup/company-manager',
       AuthValidator.validateCompanyManagerSignup(),
-      this._authController.signupCompanyManager.bind(this._authController)
+      (req: AuthenticatedRequest, res: Response, next: NextFunction) =>
+        resolve<AuthController>('AuthController').signupCompanyManager(req, res, next)
     );
 
     this._router.post(
       '/signup/team-member',
       AuthValidator.validateTeamMemberSignup(),
-      this._authController.signupTeamMember.bind(this._authController)
+      (req: AuthenticatedRequest, res: Response, next: NextFunction) =>
+        resolve<AuthController>('AuthController').signupTeamMember(req, res, next)
     );
 
     this._router.post(
       '/login',
       AuthValidator.validateLogin(),
-      this._authController.login.bind(this._authController)
+      (req: AuthenticatedRequest, res: Response, next: NextFunction) =>
+        resolve<AuthController>('AuthController').login(req, res, next)
     );
 
     this._router.post(
       '/refresh',
-      this._authController.refreshToken.bind(this._authController)
+      (req: AuthenticatedRequest, res: Response, next: NextFunction) =>
+        resolve<AuthController>('AuthController').refreshToken(req, res, next)
     );
 
     this._router.post(
       '/password/forgot',
       AuthValidator.validateForgotPassword(),
-      this._authController.forgotPassword.bind(this._authController)
+      (req: AuthenticatedRequest, res: Response, next: NextFunction) =>
+        resolve<AuthController>('AuthController').forgotPassword(req, res, next)
     );
 
     this._router.get(
       '/password/verify',
-      this._authController.verifyResetToken.bind(this._authController)
+      (req: AuthenticatedRequest, res: Response, next: NextFunction) =>
+        resolve<AuthController>('AuthController').verifyResetToken(req, res, next)
     );
 
     this._router.post(
       '/password/reset',
       AuthValidator.validateResetPassword(),
-      this._authController.resetPassword.bind(this._authController)
+      (req: AuthenticatedRequest, res: Response, next: NextFunction) =>
+        resolve<AuthController>('AuthController').resetPassword(req, res, next)
     );
 
     // 보호된 엔드포인트 (인증 필요)
     this._router.post(
       '/logout',
       authenticateToken,
-      this._authController.logout.bind(this._authController)
+      (req: AuthenticatedRequest, res: Response, next: NextFunction) =>
+        resolve<AuthController>('AuthController').logout(req, res, next)
     );
 
     this._router.post(
@@ -182,7 +110,8 @@ export class AuthModule {
       authenticateToken,
       requireSystemAdmin,
       AuthValidator.validateCompanyApproval(),
-      this._authController.approveCompany.bind(this._authController)
+      (req: AuthenticatedRequest, res: Response, next: NextFunction) =>
+        resolve<AuthController>('AuthController').approveCompany(req, res, next)
     );
 
     this._router.post(
@@ -190,7 +119,8 @@ export class AuthModule {
       authenticateToken,
       requireCompanyManager,
       AuthValidator.validateMemberApproval(),
-      this._authController.approveMember.bind(this._authController)
+      (req: AuthenticatedRequest, res: Response, next: NextFunction) =>
+        resolve<AuthController>('AuthController').approveMember(req, res, next)
     );
   }
 

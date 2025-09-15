@@ -8,9 +8,7 @@ import crypto from 'crypto';
 
 @injectable()
 export class CompanyRepository extends BaseRepository<Company> implements ICompanyRepository {
-  constructor(
-    @inject('PrismaService') prismaService: PrismaService
-  ) {
+  constructor(@inject('PrismaService') prismaService: PrismaService) {
     super(prismaService.getClient(), 'company');
   }
 
@@ -34,8 +32,8 @@ export class CompanyRepository extends BaseRepository<Company> implements ICompa
   }
 
   async updateApprovalStatus(
-    companyId: string, 
-    statusId: number, 
+    companyId: string,
+    statusId: number,
     invitationCode?: string
   ): Promise<Company> {
     const updateData: any = {
@@ -61,12 +59,12 @@ export class CompanyRepository extends BaseRepository<Company> implements ICompa
     while (!isUnique) {
       // Generate a 6-character alphanumeric code
       code = crypto.randomBytes(3).toString('hex').toUpperCase();
-      
+
       // Check if the code is unique
       const existing = await this.findOne({
         where: { invitation_code: code },
       });
-      
+
       if (!existing) {
         isUnique = true;
       }
@@ -77,7 +75,7 @@ export class CompanyRepository extends BaseRepository<Company> implements ICompa
 
   async findByInvitationCode(code: string): Promise<Company | null> {
     return this.findOne({
-      where: { 
+      where: {
         invitation_code: code,
         status_id: 1, // ACTIVE status
       },
@@ -124,7 +122,7 @@ export class CompanyRepository extends BaseRepository<Company> implements ICompa
 
   async getCompanyStatistics(companyId: string): Promise<any> {
     const client = this.prisma;
-    
+
     const [company, employeeCount, projectCount, activeProjectCount] = await Promise.all([
       this.findById(companyId, {
         include: {
@@ -158,7 +156,7 @@ export class CompanyRepository extends BaseRepository<Company> implements ICompa
 
   async createWithManager(companyData: any, managerId: string): Promise<Company> {
     const companyId = IdValidator.generateId('COMPANY');
-    
+
     return this.create({
       id: companyId,
       ...companyData,

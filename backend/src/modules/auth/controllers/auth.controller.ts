@@ -9,8 +9,8 @@ import {
   LoginRequestDto,
   ForgotPasswordRequestDto,
   ResetPasswordRequestDto,
-  CompanyApprovalRequestDto,
-  MemberApprovalRequestDto,
+  // CompanyApprovalRequestDto,
+  // MemberApprovalRequestDto,
 } from '@modules/auth/dto/request';
 
 @injectable()

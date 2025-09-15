@@ -3,8 +3,8 @@ import { injectable, inject } from 'tsyringe';
 import { BaseRepository } from '@infrastructure/database/base.repository';
 import { ITokenRepository } from '../interfaces/repository.interfaces';
 import { PrismaService } from '@infrastructure/database/prisma.service';
-import { IdValidator } from '@shared/utils/dbConstraints';
-import { jwtManager } from '../utils/jwt';
+import { IdValidator } from '@shared/utils/dbConstraints.js';
+import { jwtManager } from '../utils/jwt.js';
 import crypto from 'crypto';
 
 @injectable()
@@ -12,9 +12,7 @@ export class TokenRepository extends BaseRepository<RefreshToken> implements ITo
   private passwordResetTokenModel: any;
   private tokenBlacklistModel: any;
 
-  constructor(
-    @inject('PrismaService') prismaService: PrismaService
-  ) {
+  constructor(@inject('PrismaService') prismaService: PrismaService) {
     super(prismaService.getClient(), 'refreshToken');
     this.passwordResetTokenModel = (prismaService.getClient() as any).passwordResetToken;
     this.tokenBlacklistModel = (prismaService.getClient() as any).tokenBlacklist;
@@ -30,7 +28,7 @@ export class TokenRepository extends BaseRepository<RefreshToken> implements ITo
   ): Promise<void> {
     const tokenHash = this.hashToken(token);
     const id = IdValidator.generateId('REFRESH_TOKEN');
-    
+
     await this.create({
       id,
       user_id: userId,
@@ -45,7 +43,7 @@ export class TokenRepository extends BaseRepository<RefreshToken> implements ITo
   async findRefreshToken(token: string): Promise<RefreshToken | null> {
     const tokenHash = this.hashToken(token);
     return this.findOne({
-      where: { 
+      where: {
         token_hash: tokenHash,
         revoked_at: null,
         expires_at: {
@@ -69,7 +67,7 @@ export class TokenRepository extends BaseRepository<RefreshToken> implements ITo
 
   async invalidateUserTokens(userId: string): Promise<void> {
     await this.updateMany(
-      { 
+      {
         user_id: userId,
         revoked_at: null,
       },
@@ -99,19 +97,13 @@ export class TokenRepository extends BaseRepository<RefreshToken> implements ITo
 
     // Clean expired refresh tokens
     await this.deleteMany({
-      OR: [
-        { expires_at: { lt: new Date() } },
-        { revoked_at: { lt: thirtyDaysAgo } },
-      ],
+      OR: [{ expires_at: { lt: new Date() } }, { revoked_at: { lt: thirtyDaysAgo } }],
     });
 
     // Clean expired password reset tokens
     await this.passwordResetTokenModel.deleteMany({
       where: {
-        OR: [
-          { expires_at: { lt: new Date() } },
-          { used_at: { lt: thirtyDaysAgo } },
-        ],
+        OR: [{ expires_at: { lt: new Date() } }, { used_at: { lt: thirtyDaysAgo } }],
       },
     });
 
@@ -161,11 +153,16 @@ export class TokenRepository extends BaseRepository<RefreshToken> implements ITo
     });
   }
 
-  async addToBlacklist(token: string, expiresAt: Date, userId?: string, reason?: string): Promise<void> {
+  async addToBlacklist(
+    token: string,
+    expiresAt: Date,
+    userId?: string,
+    reason?: string
+  ): Promise<void> {
     // Extract jti from the actual token
     const decoded = jwtManager.decodeToken(token);
     const jti = decoded?.jti;
-    
+
     if (!jti) {
       throw new Error('토큰에서 jti를 추출할 수 없습니다');
     }

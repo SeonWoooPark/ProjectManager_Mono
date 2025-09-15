@@ -32,7 +32,7 @@ const startServer = async () => {
 
 // 서버 시작
 let server: any;
-startServer().then(s => {
+startServer().then((s) => {
   server = s;
 });
 
@@ -41,22 +41,22 @@ process.on('SIGINT', gracefulShutdown);
 
 async function gracefulShutdown(signal: string) {
   logger.info(`${signal} signal received: closing HTTP server`);
-  
+
   if (server) {
     server.close(async () => {
       logger.info('HTTP server closed');
-      
+
       // 애플리케이션 및 데이터베이스 연결 종료
       try {
         await prismaService.disconnect();
         logger.info('Database connection closed');
-        
+
         await shutdownApp();
         logger.info('Application shutdown completed');
       } catch (error) {
         logger.error('Error during shutdown:', error);
       }
-      
+
       process.exit(0);
     });
   }

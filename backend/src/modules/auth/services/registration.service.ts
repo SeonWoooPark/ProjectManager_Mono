@@ -161,23 +161,20 @@ export class RegistrationService {
     const userStatus = await prisma.userStatus.findUnique({ where: { id: newUser.status_id } });
 
     return {
-      success: true,
-      data: {
-        user: {
-          id: newUser.id,
-          email: newUser.email,
-          user_name: newUser.user_name,
-          role_id: newUser.role_id,
-          role_name: role?.role_name || 'TEAM_MEMBER',
-          status_id: newUser.status_id,
-          status_name: userStatus?.status_name || 'PENDING',
-        },
-        company: {
-          id: company.id,
-          company_name: company.company_name,
-        },
-        message: '회원가입이 완료되었습니다. 회사 관리자의 승인을 기다려주세요.',
-      }
+      user: {
+        id: newUser.id,
+        email: newUser.email,
+        user_name: newUser.user_name,
+        role_id: newUser.role_id,
+        role_name: role?.role_name || 'TEAM_MEMBER',
+        status_id: newUser.status_id,
+        status_name: userStatus?.status_name || 'PENDING',
+      },
+      company: {
+        id: company.id,
+        company_name: company.company_name,
+      },
+      message: '회원가입이 완료되었습니다. 회사 관리자의 승인을 기다려주세요.',
     };
   }
 
