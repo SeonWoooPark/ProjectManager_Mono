@@ -2,14 +2,15 @@ import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
+import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
-import { config } from './config/config';
-import { errorHandler } from './middleware/errorHandler';
-import { notFoundHandler } from './middleware/notFoundHandler';
-import { rateLimiter } from './middleware/rateLimiter';
-import { requestLogger } from './middleware/requestLogger';
-import router from './routes';
-import { logger } from './utils/logger';
+import { config } from '@core/config';
+import { errorHandler } from '@shared/middleware/errorHandler';
+import { notFoundHandler } from '@shared/middleware/notFoundHandler';
+import { rateLimiter } from '@shared/middleware/rateLimiter';
+import { requestLogger } from '@shared/middleware/requestLogger';
+import { AuthModule } from '@modules/auth';
+import { logger } from '@shared/utils/logger';
 
 class App {
   public app: Application;
@@ -25,6 +26,7 @@ class App {
     this.app.use(helmet());
     this.app.use(cors(config.cors));
     this.app.use(compression());
+    this.app.use(cookieParser());
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -48,7 +50,9 @@ class App {
       });
     });
 
-    this.app.use('/api/v1', router);
+    // Module routes
+    const authModule = AuthModule.getInstance();
+    this.app.use('/api/v1/auth', authModule.router);
   }
 
   private initializeErrorHandling(): void {

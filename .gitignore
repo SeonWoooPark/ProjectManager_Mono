@@ -126,3 +126,6 @@ debug/
 # Generated files
 *.generated.*
 generated/
+
+# Serena MCP
+.serena/
