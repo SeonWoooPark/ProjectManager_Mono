@@ -10,6 +10,9 @@ import { notFoundHandler } from '@shared/middleware/notFoundHandler';
 import { rateLimiter } from '@shared/middleware/rateLimiter';
 import { requestLogger } from '@shared/middleware/requestLogger';
 import { AuthModule } from '@modules/auth';
+import { ProjectsModule } from '@modules/projects';
+import { TasksModule } from '@modules/tasks';
+import { MembersModule } from '@modules/members';
 import { logger } from '@shared/utils/logger';
 
 class App {
@@ -53,6 +56,15 @@ class App {
     // Module routes
     const authModule = AuthModule.getInstance();
     this.app.use('/api/v1/auth', authModule.router);
+
+    const projectsModule = ProjectsModule.getInstance();
+    this.app.use('/api/v1/projects', projectsModule.router);
+
+    const tasksModule = TasksModule.getInstance();
+    this.app.use('/api/v1/tasks', tasksModule.router);
+
+    const membersModule = MembersModule.getInstance();
+    this.app.use('/api/v1/members', membersModule.router);
   }
 
   private initializeErrorHandling(): void {

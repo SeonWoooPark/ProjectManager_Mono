@@ -1,13 +1,6 @@
 import { injectable, inject } from 'tsyringe';
-import {
-  UserStatus,
-  UserRole,
-  CompanyStatus,
-} from '@shared/interfaces/auth.types';
-import {
-  ConflictError,
-  NotFoundError,
-} from '@shared/utils/errors';
+import { UserStatus, UserRole, CompanyStatus } from '../interfaces/auth.types';
+import { ConflictError, NotFoundError } from '@shared/utils/errors';
 import { UserRepository } from '@modules/auth/repositories/user.repository';
 import { CompanyRepository } from '@modules/auth/repositories/company.repository';
 import { PrismaService } from '@infrastructure/database/prisma.service';
@@ -24,7 +17,7 @@ export class ApprovalService {
    * Approve company (System Admin only)
    */
   async approveCompany(
-    companyId: string, 
+    companyId: string,
     action: 'approve' | 'reject',
     adminId: string,
     comment?: string,
@@ -97,7 +90,9 @@ export class ApprovalService {
 
     // Fetch updated data for response
     const updatedCompany = await this.companyRepository.findById(companyId);
-    const manager = company.manager_id ? await this.userRepository.findById(company.manager_id) : null;
+    const manager = company.manager_id
+      ? await this.userRepository.findById(company.manager_id)
+      : null;
 
     return {
       company: {
@@ -106,16 +101,18 @@ export class ApprovalService {
         status_id: updatedCompany!.status_id,
         status_name: 'ACTIVE',
         invitation_code: invitationCode,
-        manager_id: updatedCompany!.manager_id
+        manager_id: updatedCompany!.manager_id,
       },
-      manager: manager ? {
-        id: manager.id,
-        email: manager.email,
-        status_id: manager.status_id,
-        status_name: 'ACTIVE'
-      } : null,
+      manager: manager
+        ? {
+            id: manager.id,
+            email: manager.email,
+            status_id: manager.status_id,
+            status_name: 'ACTIVE',
+          }
+        : null,
       approved_at: new Date().toISOString(),
-      approved_by: adminId
+      approved_by: adminId,
     };
   }
 
@@ -172,7 +169,7 @@ export class ApprovalService {
    * Approve team member (Company Manager only)
    */
   async approveMember(
-    memberId: string, 
+    memberId: string,
     action: 'approve' | 'reject',
     managerId: string,
     comment?: string
@@ -201,7 +198,7 @@ export class ApprovalService {
     // Handle rejection
     if (action === 'reject') {
       await this.userRepository.updateStatus(memberId, UserStatus.INACTIVE);
-      
+
       return {
         user: {
           id: member.id,
@@ -209,11 +206,11 @@ export class ApprovalService {
           user_name: member.user_name,
           status_id: UserStatus.INACTIVE,
           status_name: 'INACTIVE',
-          company_id: member.company_id
+          company_id: member.company_id,
         },
         rejected_at: new Date().toISOString(),
         rejected_by: managerId,
-        comment: comment
+        comment: comment,
       };
     }
 
@@ -227,11 +224,11 @@ export class ApprovalService {
         user_name: member.user_name,
         status_id: UserStatus.ACTIVE,
         status_name: 'ACTIVE',
-        company_id: member.company_id
+        company_id: member.company_id,
       },
       approved_at: new Date().toISOString(),
       approved_by: managerId,
-      comment: comment
+      comment: comment,
     };
   }
 

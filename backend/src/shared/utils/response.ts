@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { ErrorResponseDto, SuccessResponse } from '../interfaces/auth.types';
+import { ErrorResponseDto, SuccessResponse } from '@modules/auth/interfaces/auth.types';
 
 export class ResponseFormatter {
   // Send success response

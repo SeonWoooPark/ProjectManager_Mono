@@ -1,2 +1,2 @@
-export * from './repository.interfaces';
-export * from './auth.types';
+// interfaces 폴더에서 모든 파일이 auth 모듈로 이동됨
+// 필요시 향후 공통 인터페이스를 추가할 수 있음

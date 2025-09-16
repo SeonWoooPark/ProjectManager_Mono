@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { injectable, inject } from 'tsyringe';
 import { LoginRequestDto } from '@modules/auth/dto/request';
-import { UserStatus, CompanyStatus, UserRole } from '@shared/interfaces/auth.types';
+import { UserStatus, CompanyStatus, UserRole } from '../interfaces/auth.types';
 import {
   InvalidCredentialsError,
   AccountStatusError,

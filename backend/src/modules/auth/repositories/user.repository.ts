@@ -1,7 +1,7 @@
 import { User, Company } from '@prisma/client';
 import { injectable, inject } from 'tsyringe';
 import { BaseRepository } from '@infrastructure/database/base.repository';
-import { IUserRepository } from '@shared/interfaces/repository.interfaces';
+import { IUserRepository } from '../interfaces/repository.interfaces';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { IdValidator } from '@shared/utils/dbConstraints';
 
