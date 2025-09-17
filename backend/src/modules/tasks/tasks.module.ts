@@ -35,18 +35,18 @@ export class TasksModule {
       (req, res, next) => resolve<TasksController>('TasksController').listAssigned(req, res, next)
     );
 
-    // PATCH /api/v1/tasks/:taskId/status
+    // PATCH /api/v1/tasks/:task_id/status
     this._router.patch(
-      '/:taskId/status',
+      '/:task_id/status',
       authenticateToken,
       requireActiveUser,
       TasksValidator.validateChangeStatus(),
       (req, res, next) => resolve<TasksController>('TasksController').changeStatus(req, res, next)
     );
 
-    // PATCH /api/v1/tasks/:taskId
+    // PATCH /api/v1/tasks/:task_id
     this._router.patch(
-      '/:taskId',
+      '/:task_id',
       authenticateToken,
       requireActiveUser,
       TasksValidator.validateUpdateTask(),

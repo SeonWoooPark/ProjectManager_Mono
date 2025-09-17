@@ -1,6 +1,6 @@
 import { AuthenticatedRequest } from '@modules/auth/interfaces/auth.types';
 import { TasksRepository } from '../repositories/tasks.repository';
-import { ValidationError, AuthorizationError } from '@shared/utils/errors';
+import { ValidationError } from '@shared/utils/errors';
 import { IdValidator, RangeValidator, DateValidator } from '@shared/utils/dbConstraints';
 import { injectable, inject } from 'tsyringe';
 

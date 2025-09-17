@@ -21,20 +21,20 @@ import { AuthService } from '@modules/auth/services/auth.service';
 // Auth Module Controllers
 import { AuthController } from '@modules/auth/controllers/auth.controller';
 
-// Projects Module - Temporarily disabled due to type errors
-// import { ProjectsRepository } from '@modules/projects/repositories/projects.repository';
-// import { ProjectsService } from '@modules/projects/services/projects.service';
-// import { ProjectsController } from '@modules/projects/controllers/projects.controller';
+// Projects Module
+import { ProjectsRepository } from '@modules/projects/repositories/projects.repository';
+import { ProjectsService } from '@modules/projects/services/projects.service';
+import { ProjectsController } from '@modules/projects/controllers/projects.controller';
 
-// Tasks Module - Temporarily disabled due to type errors
-// import { TasksRepository } from '@modules/tasks/repositories/tasks.repository';
-// import { TasksService } from '@modules/tasks/services/tasks.service';
-// import { TasksController } from '@modules/tasks/controllers/tasks.controller';
+// Tasks Module
+import { TasksRepository } from '@modules/tasks/repositories/tasks.repository';
+import { TasksService } from '@modules/tasks/services/tasks.service';
+import { TasksController } from '@modules/tasks/controllers/tasks.controller';
 
-// Members Module - Temporarily disabled due to type errors
-// import { MembersRepository } from '@modules/members/repositories/members.repository';
-// import { MembersService } from '@modules/members/services/members.service';
-// import { MembersController } from '@modules/members/controllers/members.controller';
+// Members Module
+import { MembersRepository } from '@modules/members/repositories/members.repository';
+import { MembersService } from '@modules/members/services/members.service';
+import { MembersController } from '@modules/members/controllers/members.controller';
 
 // Cache Services (for future implementation)
 // import { RedisClient } from '@infrastructure/cache/redis.client';
@@ -113,10 +113,10 @@ class DIContainer {
     container.registerSingleton<CompanyRepository>('CompanyRepository', CompanyRepository);
     container.registerSingleton<TokenRepository>('TokenRepository', TokenRepository);
     
-    // Projects/Tasks/Members 모듈 Repositories - All temporarily disabled due to type errors
-    // container.registerSingleton<ProjectsRepository>('ProjectsRepository', ProjectsRepository);
-    // container.registerSingleton<TasksRepository>('TasksRepository', TasksRepository);
-    // container.registerSingleton<MembersRepository>('MembersRepository', MembersRepository);
+    // Projects/Tasks/Members 모듈 Repositories
+    container.registerSingleton<ProjectsRepository>('ProjectsRepository', ProjectsRepository);
+    container.registerSingleton<TasksRepository>('TasksRepository', TasksRepository);
+    container.registerSingleton<MembersRepository>('MembersRepository', MembersRepository);
     
     console.log('🏪 Repository dependencies registered');
   }
@@ -137,10 +137,10 @@ class DIContainer {
     // Facade 서비스
     container.registerSingleton<AuthService>('AuthService', AuthService);
     
-    // Projects/Tasks/Members 서비스 - All temporarily disabled due to type errors
-    // container.registerSingleton<ProjectsService>('ProjectsService', ProjectsService);
-    // container.registerSingleton<TasksService>('TasksService', TasksService);
-    // container.registerSingleton<MembersService>('MembersService', MembersService);
+    // Projects/Tasks/Members 서비스
+    container.registerSingleton<ProjectsService>('ProjectsService', ProjectsService);
+    container.registerSingleton<TasksService>('TasksService', TasksService);
+    container.registerSingleton<MembersService>('MembersService', MembersService);
     
     console.log('⚙️ Service dependencies registered');
   }
@@ -152,10 +152,10 @@ class DIContainer {
     // Auth 모듈 Controllers
     container.registerSingleton<AuthController>('AuthController', AuthController);
     
-    // Projects/Tasks/Members 모듈 Controllers - All temporarily disabled due to type errors
-    // container.registerSingleton<ProjectsController>('ProjectsController', ProjectsController);
-    // container.registerSingleton<TasksController>('TasksController', TasksController);
-    // container.registerSingleton<MembersController>('MembersController', MembersController);
+    // Projects/Tasks/Members 모듈 Controllers
+    container.registerSingleton<ProjectsController>('ProjectsController', ProjectsController);
+    container.registerSingleton<TasksController>('TasksController', TasksController);
+    container.registerSingleton<MembersController>('MembersController', MembersController);
     
     console.log('🎮 Controller dependencies registered');
   }

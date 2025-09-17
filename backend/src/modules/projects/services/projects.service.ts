@@ -81,8 +81,14 @@ export class ProjectsService {
       if (!pr.valid) throw new ValidationError(pr.errors.join(', '));
     }
 
-    if (body.end_date) {
-      // ensure new end_date > start_date from DB
+    // 날짜 검증 - start_date와 end_date가 둘 다 있는 경우
+    if (body.start_date && body.end_date) {
+      const dateCheck = DateValidator.validateDateRange(body.start_date, body.end_date);
+      if (!dateCheck.valid) throw new ValidationError(dateCheck.errors.join(', '));
+    }
+
+    // end_date만 변경되는 경우 - DB에서 start_date를 가져와서 검증
+    if (body.end_date && !body.start_date) {
       await this.repo.assertProjectEndDateValid(projectId, new Date(body.end_date));
     }
 

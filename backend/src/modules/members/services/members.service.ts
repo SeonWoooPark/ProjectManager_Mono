@@ -20,4 +20,10 @@ export class MembersService {
     if (!user.company_id) throw new AuthorizationError('회사 식별 불가');
     return this.repo.listPendingMembers(user);
   }
+
+  async getProjectMembers(user: NonNullable<AuthenticatedRequest['user']>, projectId: string) {
+    const valid = IdValidator.validateProjectId(projectId);
+    if (!valid.valid) throw new ValidationError(valid.errors.join(', '));
+    return this.repo.getProjectMembers(user, projectId);
+  }
 }

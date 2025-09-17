@@ -1,8 +1,7 @@
 import { Response, NextFunction } from 'express';
-import { Response, NextFunction } from 'express';
 import { AuthenticatedRequest, UserRole } from '../interfaces/auth.types';
 import { jwtManager } from '../utils/jwt';
-import { AuthenticationError, AuthorizationError, InvalidTokenError, TokenExpiredError } from '@shared/utils/errors';
+
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -12,7 +11,7 @@ export const authenticateToken = async (
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
-) => {
+): Promise<any> => {
   try {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
@@ -81,7 +80,7 @@ export const authenticateToken = async (
 
 // Check if user has specific role
 export const requireRole = (...allowedRoles: UserRole[]) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction): any => {
     if (!req.user) {
       return res.status(401).json({
         success: false,
@@ -116,7 +115,7 @@ export const requireSameCompany = async (
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
-) => {
+): Promise<any> => {
   try {
     if (!req.user) {
       return res.status(401).json({
@@ -174,7 +173,7 @@ export const requireActiveUser = async (
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
-) => {
+): Promise<any> => {
   try {
     if (!req.user) {
       return res.status(401).json({
@@ -213,7 +212,7 @@ export const optionalAuth = async (
   req: AuthenticatedRequest,
   _res: Response,
   next: NextFunction
-) => {
+): Promise<any> => {
   try {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];

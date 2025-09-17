@@ -8,7 +8,7 @@ import { injectable, inject } from 'tsyringe';
 export class TasksController {
   constructor(@inject('TasksService') private service: TasksService) {}
 
-  async listAssigned(req: AuthenticatedRequest, res: Response, next: Function) {
+  async listAssigned(req: AuthenticatedRequest, res: Response, next: Function): Promise<any> {
     try {
       const user = req.user!;
       const { status_id, project_id } = req.query as any;
@@ -22,10 +22,10 @@ export class TasksController {
     }
   }
 
-  async changeStatus(req: AuthenticatedRequest, res: Response, next: Function) {
+  async changeStatus(req: AuthenticatedRequest, res: Response, next: Function): Promise<any> {
     try {
       const user = req.user!;
-      const { taskId } = req.params;
+      const { task_id: taskId } = req.params;
       const result = await this.service.changeStatus(user, taskId, req.body);
       return ResponseFormatter.success(res, result);
     } catch (err) {
@@ -33,10 +33,10 @@ export class TasksController {
     }
   }
 
-  async updateTask(req: AuthenticatedRequest, res: Response, next: Function) {
+  async updateTask(req: AuthenticatedRequest, res: Response, next: Function): Promise<any> {
     try {
       const user = req.user!;
-      const { taskId } = req.params;
+      const { task_id: taskId } = req.params;
       const result = await this.service.updateTask(user, taskId, req.body);
       return ResponseFormatter.success(res, result);
     } catch (err) {
