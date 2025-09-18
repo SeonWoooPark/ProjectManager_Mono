@@ -4,9 +4,14 @@
 
 @layer base {
   :root {
+    /* Light theme - 기본 테마 */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221 83% 53%;
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -18,14 +23,27 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
+    --ring: 221 83% 53%;
+    --radius: 0.375rem;
+
+    /* Light theme sidebar colors */
+    --sidebar: 0 0% 100%;
+    --sidebar-foreground: 222.2 84% 4.9%;
+    --sidebar-primary: 221 83% 53%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-hover: 210 40% 96.1%;
+    --sidebar-active: 221 83% 53%;
   }
 
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 221 83% 53%;
     --primary-foreground: 222.2 47.4% 11.2%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -37,7 +55,16 @@
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --ring: 221 83% 53%;
+
+    /* Dark theme sidebar colors */
+    --sidebar: 222 47% 11%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 221 83% 53%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-border: 217 33% 17%;
+    --sidebar-hover: 217 33% 17%;
+    --sidebar-active: 221 83% 53%;
   }
 }
 
@@ -47,7 +74,67 @@
   }
   
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Custom scrollbar styles */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-muted;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/30 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/50;
+  }
+}
+
+@layer components {
+  /* Sidebar styles */
+  .bg-sidebar {
+    background-color: hsl(var(--sidebar));
+  }
+  
+  .text-sidebar-foreground {
+    color: hsl(var(--sidebar-foreground));
+  }
+  
+  .text-sidebar-primary {
+    color: hsl(var(--sidebar-primary));
+  }
+  
+  .border-sidebar-border {
+    border-color: hsl(var(--sidebar-border));
+  }
+  
+  .hover\:bg-sidebar-hover:hover {
+    background-color: hsl(var(--sidebar-hover));
+  }
+  
+  .bg-sidebar-active {
+    background-color: hsl(var(--sidebar-active));
+  }
+
+  /* Card hover effects */
+  .card-hover {
+    @apply transition-all duration-200 hover:shadow-lg hover:-translate-y-1;
+  }
+
+  /* Button improvements */
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 transition-colors;
+  }
+
+  /* Stats card styles */
+  .stat-card {
+    @apply bg-card rounded-lg p-6 border shadow-sm hover:shadow-md transition-shadow;
   }
 }
