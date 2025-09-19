@@ -124,7 +124,7 @@ const recentActivities = [
 
 export function TeamMemberDashboard() {
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-foreground">내 대시보드</h1>

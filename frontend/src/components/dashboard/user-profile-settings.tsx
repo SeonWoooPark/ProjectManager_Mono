@@ -62,7 +62,7 @@ export function UserProfileSettings() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-foreground">계정 설정</h1>
         <p className="text-muted-foreground">프로필 정보와 계정 설정을 관리하세요</p>

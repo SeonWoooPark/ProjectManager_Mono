@@ -75,7 +75,7 @@ export function MemberProjectsView() {
 
   if (selectedProject && selectedProjectData) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <Button variant="ghost" onClick={() => setSelectedProject(null)} className="mb-2 p-0 h-auto">
@@ -134,7 +134,7 @@ export function MemberProjectsView() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-foreground">내 프로젝트</h1>
         <p className="text-muted-foreground">할당된 프로젝트들의 상세 정보와 진행 상황</p>

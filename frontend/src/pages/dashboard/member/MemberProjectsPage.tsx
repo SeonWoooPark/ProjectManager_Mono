@@ -6,7 +6,7 @@ export default function MemberProjectsPage() {
     <div className="flex h-screen bg-background">
       <TeamMemberSidebar />
       <main className="flex-1 overflow-y-auto">
-        <div className="container py-8 max-w-7xl">
+        <div className="py-6 pl-6 pr-6 max-w-9xl mx-auto">
           <MemberProjectsView />
         </div>
       </main>

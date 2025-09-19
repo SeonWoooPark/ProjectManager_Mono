@@ -76,7 +76,7 @@ const departmentStats = [
 
 export function TeamMembersView() {
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-foreground">팀원 현황</h1>
         <p className="text-muted-foreground">우리 팀의 모든 구성원 정보를 확인하세요</p>
