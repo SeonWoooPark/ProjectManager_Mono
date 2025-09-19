@@ -14,31 +14,32 @@ const navigation = [
 ]
 
 export function TeamMemberSidebar() {
-  const { pathname } = useLocation()
+  const location = useLocation()
+  const pathname = location.pathname
 
   return (
-    <div className="w-64 h-screen bg-white border-r border-gray-200 flex flex-col">
-      <div className="p-6 flex-1">
-        <div className="flex items-center gap-3 mb-8">
-          <User className="h-9 w-9 text-primary" />
+    <div className="w-64 bg-sidebar border-r border-sidebar-border">
+      <div className="p-6">
+        <div className="flex items-center gap-2 mb-6">
+          <User className="h-8 w-8 text-sidebar-primary" />
           <div>
-            <h1 className="text-lg font-bold text-gray-900">팀원</h1>
-            <p className="text-sm text-gray-500">김철수</p>
+            <h1 className="text-lg font-bold text-sidebar-foreground">팀원</h1>
+            <p className="text-sm text-sidebar-foreground/70">김철수</p>
           </div>
         </div>
 
-        <nav className="space-y-1">
+        <nav className="space-y-2">
           {navigation.map((item) => {
             const isActive = pathname === item.href
             return (
-              <Link key={item.name} to={item.href}>
+              <Link key={item.name}  to={item.href}>
                 <Button
                   variant={isActive ? "default" : "ghost"}
                   className={cn(
-                    "w-full justify-start gap-3 h-10",
+                    "w-full justify-start gap-2",
                     isActive
-                      ? "bg-primary text-white hover:bg-primary/90"
-                      : "text-gray-700 hover:bg-gray-100 hover:text-gray-900",
+                      ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                   )}
                 >
                   <item.icon className="h-4 w-4" />
@@ -50,11 +51,12 @@ export function TeamMemberSidebar() {
         </nav>
       </div>
 
-      <div className="p-6 border-t border-gray-200">
-        <Link to="/auth/login">
+      <div className="absolute bottom-0 w-64 p-6">
+        <Separator className="mb-4" />
+        <Link  to="/auth/login">
           <Button
             variant="ghost"
-            className="w-full justify-start gap-3 text-gray-700 hover:bg-gray-100"
+            className="w-full justify-start gap-2 text-sidebar-foreground hover:bg-sidebar-accent"
           >
             <LogOut className="h-4 w-4" />
             로그아웃

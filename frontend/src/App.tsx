@@ -49,7 +49,7 @@ function App() {
         
         {/* Auth Routes */}
         <Route path="/auth">
-          <Route path="login" element={!isAuthenticated ? <Navigate to="/dashboard/member" /> : <LoginPage />} />
+          <Route path="login" element={isAuthenticated ? <Navigate to="/dashboard/member" /> : <LoginPage />} />
           <Route path="signup" element={<SignupPage />} />
           <Route path="company-setup" element={<CompanySetupPage />} />
           <Route path="join-company" element={<JoinCompanyPage />} />

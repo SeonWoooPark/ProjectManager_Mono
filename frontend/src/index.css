@@ -29,11 +29,11 @@
     /* Light theme sidebar colors */
     --sidebar: 0 0% 100%;
     --sidebar-foreground: 222.2 84% 4.9%;
-    --sidebar-primary: 221 83% 53%;
-    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-primary: 0 0% 9%;
+    --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-border: 214.3 31.8% 91.4%;
     --sidebar-hover: 210 40% 96.1%;
-    --sidebar-active: 221 83% 53%;
+    --sidebar-active: 0 0% 9%;
   }
 
   .dark {
@@ -60,11 +60,11 @@
     /* Dark theme sidebar colors */
     --sidebar: 222 47% 11%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 221 83% 53%;
-    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 0 0% 0%;
     --sidebar-border: 217 33% 17%;
     --sidebar-hover: 217 33% 17%;
-    --sidebar-active: 221 83% 53%;
+    --sidebar-active: 0 0% 100%;
   }
 }
 
