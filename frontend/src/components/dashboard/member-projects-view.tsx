@@ -2,9 +2,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@comp
 import { Button } from "@components/ui/button"
 import { Badge } from "@components/ui/badge"
 import { Progress } from "@components/ui/progress"
-import { ReadOnlyKanbanBoard } from "./read-only-kanban-board"
 import { Eye, Calendar, User } from "lucide-react"
-import { useState } from "react"
+import { Link } from "react-router-dom"
 
 // Mock data for member's assigned projects
 const memberProjects = [
@@ -69,69 +68,6 @@ const memberProjects = [
 ]
 
 export function MemberProjectsView() {
-  const [selectedProject, setSelectedProject] = useState<string | null>(null)
-
-  const selectedProjectData = memberProjects.find((p) => p.id === selectedProject)
-
-  if (selectedProject && selectedProjectData) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <Button variant="ghost" onClick={() => setSelectedProject(null)} className="mb-2 p-0 h-auto">
-              ← 프로젝트 목록으로 돌아가기
-            </Button>
-            <h1 className="text-3xl font-bold text-foreground">{selectedProjectData.name}</h1>
-            <p className="text-muted-foreground">{selectedProjectData.description}</p>
-          </div>
-          <div className="text-right">
-            <Badge variant={selectedProjectData.status === "진행 중" ? "default" : "secondary"}>
-              {selectedProjectData.status}
-            </Badge>
-            <p className="text-sm text-muted-foreground mt-1">내 역할: {selectedProjectData.role}</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">전체 진행률</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground mb-2">{selectedProjectData.progress}%</div>
-              <Progress value={selectedProjectData.progress} className="h-2" />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">내 작업 현황</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                {selectedProjectData.myTasks.completed}/{selectedProjectData.myTasks.total}
-              </div>
-              <p className="text-xs text-muted-foreground">완료된 작업</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">프로젝트 기간</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-sm font-bold text-foreground">
-                {selectedProjectData.startDate} ~ {selectedProjectData.endDate}
-              </div>
-              <p className="text-xs text-muted-foreground">시작일 ~ 마감일</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <ReadOnlyKanbanBoard tasks={selectedProjectData.allTasks} currentUser="김철수" />
-      </div>
-    )
-  }
 
   return (
     <div className="space-y-6">
@@ -195,15 +131,16 @@ export function MemberProjectsView() {
                   </div>
                 </div>
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSelectedProject(project.id)}
-                  className="bg-transparent"
-                >
-                  <Eye className="h-3 w-3 mr-1" />
-                  상세보기
-                </Button>
+                <Link to={`/dashboard/member/projects/${project.id}`}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="bg-transparent"
+                  >
+                    <Eye className="h-3 w-3 mr-1" />
+                    상세보기
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>

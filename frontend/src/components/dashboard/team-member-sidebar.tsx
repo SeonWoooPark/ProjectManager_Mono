@@ -30,7 +30,9 @@ export function TeamMemberSidebar() {
 
         <nav className="space-y-2">
           {navigation.map((item) => {
-            const isActive = pathname === item.href
+            const isActive = item.href === "/dashboard/member/projects" 
+              ? pathname.startsWith("/dashboard/member/projects")
+              : pathname === item.href
             return (
               <Link key={item.name}  to={item.href}>
                 <Button

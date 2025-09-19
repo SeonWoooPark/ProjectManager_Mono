@@ -29,6 +29,7 @@ const CompanySettingsPage = lazy(() => import('@pages/admin/company/CompanySetti
 // Member Pages
 const MemberDashboardPage = lazy(() => import('@pages/dashboard/member/MemberDashboardPage'));
 const MemberProjectsPage = lazy(() => import('@pages/dashboard/member/MemberProjectsPage'));
+const MemberProjectDetailPage = lazy(() => import('@pages/dashboard/member/MemberProjectDetailPage'));
 const MemberTasksPage = lazy(() => import('@pages/dashboard/member/MemberTasksPage'));
 const MemberTeamPage = lazy(() => import('@pages/dashboard/member/MemberTeamPage'));
 const MemberSettingsPage = lazy(() => import('@pages/dashboard/member/MemberSettingsPage'));
@@ -80,6 +81,7 @@ function App() {
         <Route path="/dashboard/member">
           <Route index element={<MemberDashboardPage />} />
           <Route path="projects" element={<MemberProjectsPage />} />
+          <Route path="projects/:id" element={<MemberProjectDetailPage />} />
           <Route path="tasks" element={<MemberTasksPage />} />
           <Route path="team" element={<MemberTeamPage />} />
           <Route path="settings" element={<MemberSettingsPage />} />
