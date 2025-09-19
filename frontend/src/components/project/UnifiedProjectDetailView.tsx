@@ -154,7 +154,11 @@ const mockProjects: { [key: string]: any } = {
   }
 }
 
-export function UnifiedProjectDetailView() {
+interface UnifiedProjectDetailViewProps {
+  userRole?: "TEAM_MEMBER" | "COMPANY_MANAGER";
+}
+
+export function UnifiedProjectDetailView({ userRole = "TEAM_MEMBER" }: UnifiedProjectDetailViewProps) {
   const { id } = useParams()
   const navigate = useNavigate()
 
@@ -166,7 +170,7 @@ export function UnifiedProjectDetailView() {
         <AlertCircle className="h-16 w-16 text-muted-foreground mb-4" />
         <h2 className="text-xl font-semibold mb-2">프로젝트를 찾을 수 없습니다</h2>
         <p className="text-muted-foreground mb-4">요청하신 프로젝트가 존재하지 않거나 접근 권한이 없습니다.</p>
-        <Button onClick={() => navigate("/dashboard/member/projects")}>
+        <Button onClick={() => navigate(userRole === "COMPANY_MANAGER" ? "/admin/company/projects" : "/dashboard/member/projects")}>
           프로젝트 목록으로 돌아가기
         </Button>
       </div>
@@ -187,6 +191,8 @@ export function UnifiedProjectDetailView() {
         priority={project.priority}
         role={project.role}
         onCreateTask={handleCreateTask}
+        returnPath={userRole === "COMPANY_MANAGER" ? "/admin/company/projects" : "/dashboard/member/projects"}
+        returnLabel="프로젝트 목록으로 돌아가기"
       />
 
       <ProjectInfoCards
@@ -205,6 +211,7 @@ export function UnifiedProjectDetailView() {
         kanbanTasks={project.kanbanTasks}
         manager={project.manager}
         currentUser="김철수"
+        userRole={userRole}
       />
     </div>
   )

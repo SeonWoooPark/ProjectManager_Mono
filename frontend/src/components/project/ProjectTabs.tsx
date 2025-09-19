@@ -48,6 +48,7 @@ interface ProjectTabsProps {
   kanbanTasks: KanbanTasks
   manager: string
   currentUser: string
+  userRole?: "TEAM_MEMBER" | "COMPANY_MANAGER"
 }
 
 export function ProjectTabs({
@@ -56,7 +57,8 @@ export function ProjectTabs({
   activities,
   kanbanTasks,
   manager,
-  currentUser
+  currentUser,
+  userRole = "TEAM_MEMBER"
 }: ProjectTabsProps) {
   const getStatusColor = (status: string) => {
     switch (status) {

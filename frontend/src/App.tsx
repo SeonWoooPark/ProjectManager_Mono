@@ -25,6 +25,7 @@ const CompanyProjectsPage = lazy(() => import('@pages/admin/company/CompanyProje
 const CompanyTeamPage = lazy(() => import('@pages/admin/company/CompanyTeamPage'));
 const CompanyInvitePage = lazy(() => import('@pages/admin/company/CompanyInvitePage'));
 const CompanySettingsPage = lazy(() => import('@pages/admin/company/CompanySettingsPage'));
+const CompanyProjectDetailPage = lazy(() => import('@pages/admin/company/CompanyProjectDetailPage'));
 
 // Member Pages
 const MemberDashboardPage = lazy(() => import('@pages/dashboard/member/MemberDashboardPage'));
@@ -72,6 +73,7 @@ function App() {
           <Route index element={<CompanyDashboardPage />} />
           <Route path="create-project" element={<CompanyCreateProjectPage />} />
           <Route path="projects" element={<CompanyProjectsPage />} />
+          <Route path="projects/:id" element={<CompanyProjectDetailPage />} />
           <Route path="team" element={<CompanyTeamPage />} />
           <Route path="invite" element={<CompanyInvitePage />} />
           <Route path="settings" element={<CompanySettingsPage />} />
