@@ -97,7 +97,7 @@ export default function SystemUsersPage() {
     <div className="flex h-screen bg-background">
       <SystemAdminSidebar />
       <main className="flex-1 overflow-y-auto">
-        <div className="container py-8 max-w-7xl space-y-6">
+        <div className="px-6 pt-6 pb-8 max-w-full space-y-6">
           <div>
             <h1 className="text-3xl font-bold text-foreground">사용자 관리</h1>
             <p className="text-muted-foreground">전체 시스템의 모든 사용자를 관리하세요</p>

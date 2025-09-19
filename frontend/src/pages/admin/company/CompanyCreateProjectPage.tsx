@@ -6,7 +6,7 @@ export default function CompanyCreateProjectPage() {
     <div className="flex h-screen bg-background">
       <CompanyAdminSidebar />
       <main className="flex-1 overflow-y-auto">
-        <div className="container py-8 max-w-4xl">
+        <div className="py-6 pl-6 pr-6 max-w-9xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold tracking-tight">새 프로젝트 생성</h1>
             <p className="text-muted-foreground">

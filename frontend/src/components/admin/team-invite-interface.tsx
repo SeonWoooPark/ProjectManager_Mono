@@ -83,7 +83,7 @@ export function TeamInviteInterface() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-foreground">팀원 초대</h1>
         <p className="text-muted-foreground">새로운 팀원을 초대하고 초대 현황을 관리하세요</p>

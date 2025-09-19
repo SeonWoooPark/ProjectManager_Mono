@@ -44,7 +44,7 @@ export default function SystemCompaniesPage() {
     <div className="flex h-screen bg-background">
       <SystemAdminSidebar />
       <main className="flex-1 overflow-y-auto">
-        <div className="container py-8 max-w-7xl space-y-6">
+        <div className="px-6 pt-6 pb-8 max-w-full space-y-6">
           <div>
             <h1 className="text-3xl font-bold text-foreground">회사 관리</h1>
             <p className="text-muted-foreground">등록된 회사들의 정보와 현황을 관리하세요</p>

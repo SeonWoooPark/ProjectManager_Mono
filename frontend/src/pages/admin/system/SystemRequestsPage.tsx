@@ -5,7 +5,7 @@ export default function SystemRequestsPage() {
     <div className="flex h-screen bg-background">
       <SystemAdminSidebar />
       <main className="flex-1 overflow-y-auto">
-        <div className="container py-8 max-w-7xl space-y-6">
+        <div className="px-6 pt-6 pb-8 max-w-full space-y-6">
           <div>
             <h1 className="text-3xl font-bold text-foreground">승인 요청 관리</h1>
             <p className="text-muted-foreground">회사 등록 요청을 검토하고 승인/반려 처리하세요</p>

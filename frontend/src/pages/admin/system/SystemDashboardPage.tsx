@@ -6,7 +6,7 @@ export default function SystemDashboardPage() {
     <div className="flex h-screen bg-background">
       <SystemAdminSidebar />
       <main className="flex-1 overflow-y-auto">
-        <div className="container py-8 max-w-7xl">
+        <div className="px-6 pt-6 pb-8 max-w-full">
           <SystemAdminDashboard />
         </div>
       </main>

@@ -65,7 +65,7 @@ const projects = [
 
 export function ProjectsOverview() {
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-foreground">프로젝트 관리</h1>
         <p className="text-muted-foreground">모든 프로젝트의 진행 상황을 확인하고 관리하세요</p>
