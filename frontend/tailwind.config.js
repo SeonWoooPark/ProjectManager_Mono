@@ -59,6 +59,11 @@ export default {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
+      fontWeight: {
+        'normal': '500',  // 기본 normal을 500으로
+        'medium': '600',  // medium을 600으로
+        'semibold': '700', // 각 단계 상향
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],
