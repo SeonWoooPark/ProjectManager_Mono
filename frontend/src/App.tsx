@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 import LoadingSpinner from '@components/atoms/LoadingSpinner';
-import ProtectedRoute from '@components/molecules/ProtectedRoute';
 import { useAuthStore } from '@store/authStore';
 
 // Auth Pages
@@ -36,7 +35,6 @@ const MemberTeamPage = lazy(() => import('@pages/dashboard/member/MemberTeamPage
 const MemberSettingsPage = lazy(() => import('@pages/dashboard/member/MemberSettingsPage'));
 
 // General Pages
-const HomePage = lazy(() => import('@pages/HomePage'));
 const ProfilePage = lazy(() => import('@pages/ProfilePage'));
 const NotFoundPage = lazy(() => import('@pages/NotFoundPage'));
 
@@ -47,7 +45,7 @@ function App() {
     <Suspense fallback={<LoadingSpinner />}>
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard/member" /> : <LoginPage />} />
         
         {/* Auth Routes */}
         <Route path="/auth">
