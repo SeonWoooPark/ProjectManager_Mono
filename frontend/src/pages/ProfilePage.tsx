@@ -13,13 +13,13 @@ export default function ProfilePage() {
         <div className="p-6 space-y-6">
           <div className="flex items-center space-x-6">
             <div className="w-24 h-24 bg-primary-500 rounded-full flex items-center justify-center text-white text-3xl font-bold">
-              {user?.name?.charAt(0).toUpperCase()}
+              {user?.user_name?.charAt(0).toUpperCase()}
             </div>
             <div>
-              <h2 className="text-xl font-semibold">{user?.name}</h2>
+              <h2 className="text-xl font-semibold">{user?.user_name}</h2>
               <p className="text-gray-600">{user?.email}</p>
               <span className="inline-block mt-2 px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm">
-                {user?.role}
+                {user?.role?.role_name || 'User'}
               </span>
             </div>
           </div>
@@ -29,7 +29,7 @@ export default function ProfilePage() {
             <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <dt className="text-sm font-medium text-gray-500">이름</dt>
-                <dd className="mt-1 text-sm text-gray-900">{user?.name}</dd>
+                <dd className="mt-1 text-sm text-gray-900">{user?.user_name}</dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500">이메일</dt>
@@ -37,7 +37,7 @@ export default function ProfilePage() {
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500">역할</dt>
-                <dd className="mt-1 text-sm text-gray-900">{user?.role}</dd>
+                <dd className="mt-1 text-sm text-gray-900">{user?.role?.role_name || 'User'}</dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500">가입일</dt>

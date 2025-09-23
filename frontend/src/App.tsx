@@ -9,6 +9,8 @@ const SignupPage = lazy(() => import('@pages/auth/SignupPage'));
 const CompanySetupPage = lazy(() => import('@pages/auth/CompanySetupPage'));
 const JoinCompanyPage = lazy(() => import('@pages/auth/JoinCompanyPage'));
 const PendingApprovalPage = lazy(() => import('@pages/auth/PendingApprovalPage'));
+const ForgotPasswordPage = lazy(() => import('@pages/auth/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('@pages/auth/ResetPasswordPage'));
 
 // Admin Pages - System
 const SystemDashboardPage = lazy(() => import('@pages/admin/system/SystemDashboardPage'));
@@ -54,6 +56,8 @@ function App() {
           <Route path="company-setup" element={<CompanySetupPage />} />
           <Route path="join-company" element={<JoinCompanyPage />} />
           <Route path="pending-approval" element={<PendingApprovalPage />} />
+          <Route path="forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="reset-password" element={<ResetPasswordPage />} />
         </Route>
         
         {/* UI Testing Routes (Authentication Bypassed) */}

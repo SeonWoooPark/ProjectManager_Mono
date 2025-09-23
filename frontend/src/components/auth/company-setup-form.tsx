@@ -1,119 +1,130 @@
-import type React from "react"
-
-import { useState } from "react"
+import { useEffect } from "react"
 import { useNavigate } from "react-router-dom"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form"
+import { useSignupCompanyManager } from "@/services/auth/authMutations"
+import type { CompanyManagerSignupDto } from "@/types/auth.types"
 
+// 유효성 검증 스키마
+const companySetupSchema = z.object({
+  company_name: z.string().min(2, '회사명은 최소 2자 이상이어야 합니다'),
+  company_description: z.string().optional(),
+})
+
+type CompanySetupFormValues = z.infer<typeof companySetupSchema>
 
 export function CompanySetupForm() {
-  const [formData, setFormData] = useState({
-    companyName: "",
-    businessNumber: "",
-    industry: "",
-    employeeCount: "",
-    address: "",
-    description: "",
-  })
-  const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
+  const signupMutation = useSignupCompanyManager()
+  
+  const form = useForm<CompanySetupFormValues>({
+    resolver: zodResolver(companySetupSchema),
+    defaultValues: {
+      company_name: '',
+      company_description: '',
+    },
+  })
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+  const handleSubmit = async (values: CompanySetupFormValues) => {
+    // sessionStorage에서 사용자 정보 가져오기
+    const signupData = sessionStorage.getItem('signupData')
+    if (!signupData) {
+      navigate('/auth/signup')
+      return
+    }
 
-    // Simulate company setup submission
-    setTimeout(() => {
-      navigate("/auth/pending-approval")
-      setIsLoading(false)
-    }, 1000)
+    const userData = JSON.parse(signupData)
+    
+    // 회사 관리자로 회원가입
+    const signupDto: CompanyManagerSignupDto = {
+      user: {
+        email: userData.email,
+        password: userData.password,
+        user_name: userData.user_name,
+        phone_number: userData.phone_number,
+      },
+      company: {
+        company_name: values.company_name,
+        company_description: values.company_description,
+      },
+    }
+    
+    signupMutation.mutate(signupDto)
   }
 
+  // 회원가입 성공 시 sessionStorage 클리어
+  useEffect(() => {
+    if (signupMutation.isSuccess) {
+      sessionStorage.removeItem('signupData')
+    }
+  }, [signupMutation.isSuccess])
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="companyName">회사명</Label>
-        <Input
-          id="companyName"
-          placeholder="회사명을 입력하세요"
-          value={formData.companyName}
-          onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-          required
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="company_name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>회사명 *</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="회사명을 입력하세요" 
+                  {...field}
+                  disabled={signupMutation.isPending}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="businessNumber">사업자등록번호</Label>
-        <Input
-          id="businessNumber"
-          placeholder="사업자등록번호를 입력하세요"
-          value={formData.businessNumber}
-          onChange={(e) => setFormData({ ...formData, businessNumber: e.target.value })}
-          required
+        <FormField
+          control={form.control}
+          name="company_description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>회사 설명</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="회사에 대한 간단한 설명을 입력하세요 (선택사항)"
+                  rows={4}
+                  {...field}
+                  disabled={signupMutation.isPending}
+                />
+              </FormControl>
+              <FormDescription>
+                회사의 주요 사업 분야나 특징을 간단히 설명해주세요
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="industry">업종</Label>
-        <Select onValueChange={(value) => setFormData({ ...formData, industry: value })}>
-          <SelectTrigger>
-            <SelectValue placeholder="업종을 선택하세요" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="tech">IT/소프트웨어</SelectItem>
-            <SelectItem value="manufacturing">제조업</SelectItem>
-            <SelectItem value="retail">소매업</SelectItem>
-            <SelectItem value="service">서비스업</SelectItem>
-            <SelectItem value="finance">금융업</SelectItem>
-            <SelectItem value="other">기타</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+        <div className="pt-4">
+          <Button 
+            type="submit" 
+            className="w-full" 
+            disabled={signupMutation.isPending}
+          >
+            {signupMutation.isPending ? "회사 등록 중..." : "회사 등록 및 승인 요청"}
+          </Button>
+        </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="employeeCount">직원 수</Label>
-        <Select onValueChange={(value) => setFormData({ ...formData, employeeCount: value })}>
-          <SelectTrigger>
-            <SelectValue placeholder="직원 수를 선택하세요" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="1-10">1-10명</SelectItem>
-            <SelectItem value="11-50">11-50명</SelectItem>
-            <SelectItem value="51-100">51-100명</SelectItem>
-            <SelectItem value="101-500">101-500명</SelectItem>
-            <SelectItem value="500+">500명 이상</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="address">주소</Label>
-        <Input
-          id="address"
-          placeholder="회사 주소를 입력하세요"
-          value={formData.address}
-          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="description">회사 설명</Label>
-        <Textarea
-          id="description"
-          placeholder="회사에 대한 간단한 설명을 입력하세요"
-          value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          rows={3}
-        />
-      </div>
-
-      <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading ? "승인 요청 중..." : "승인 요청"}
-      </Button>
-    </form>
+        <div className="text-center">
+          <p className="text-sm text-muted-foreground">
+            회사 등록 후 시스템 관리자의 승인이 필요합니다.
+            <br />
+            승인 완료 시 이메일로 안내드립니다.
+          </p>
+        </div>
+      </form>
+    </Form>
   )
 }

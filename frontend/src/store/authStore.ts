@@ -1,49 +1,53 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: string;
-}
+import type { User } from '@/types/auth.types';
 
 interface AuthState {
   user: User | null;
-  token: string | null;
-  refreshToken: string | null;
+  accessToken: string | null;
   isAuthenticated: boolean;
-  setAuth: (user: User, token: string, refreshToken: string) => void;
+  
+  // Actions
+  setAuth: (user: User, accessToken: string) => void;
   logout: () => void;
+  updateUser: (user: Partial<User>) => void;
+  setAccessToken: (accessToken: string) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
-      token: null,
-      refreshToken: null,
+      accessToken: null,
       isAuthenticated: false,
-      setAuth: (user, token, refreshToken) =>
+      
+      setAuth: (user, accessToken) =>
         set({
           user,
-          token,
-          refreshToken,
+          accessToken,
           isAuthenticated: true,
         }),
+      
       logout: () =>
         set({
           user: null,
-          token: null,
-          refreshToken: null,
+          accessToken: null,
           isAuthenticated: false,
         }),
+        
+      updateUser: (userData) =>
+        set((state) => ({
+          user: state.user ? { ...state.user, ...userData } : null,
+        })),
+        
+      setAccessToken: (accessToken) =>
+        set({ accessToken }),
     }),
     {
       name: 'auth-storage',
       partialize: (state) => ({
-        token: state.token,
-        refreshToken: state.refreshToken,
+        // accessToken은 메모리에만 저장 (localStorage에 저장하지 않음)
+        // user 정보만 localStorage에 저장
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),

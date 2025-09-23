@@ -35,7 +35,7 @@ export default function Layout() {
               {isAuthenticated ? (
                 <>
                   <Link to="/profile" className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium">
-                    {user?.name}
+                    {user?.user_name}
                   </Link>
                   <button
                     onClick={handleLogout}

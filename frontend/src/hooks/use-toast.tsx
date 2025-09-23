@@ -6,6 +6,7 @@ export interface Toast {
   description?: string
   action?: React.ReactNode
   duration?: number
+  variant?: 'default' | 'destructive'
 }
 
 interface ToastState {
@@ -96,7 +97,7 @@ function addToRemoveQueue(toastId: string) {
 export function toast(props: Omit<Toast, "id">) {
   const id = genId()
 
-  const update = (props: Toast) =>
+  const update = (props: Partial<Toast>) =>
     dispatch({
       type: "UPDATE_TOAST",
       toast: { ...props, id },
