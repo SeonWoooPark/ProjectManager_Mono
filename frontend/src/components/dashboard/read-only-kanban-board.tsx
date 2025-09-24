@@ -19,7 +19,6 @@ interface TaskColumn {
 
 interface ReadOnlyKanbanBoardProps {
   tasks: TaskColumn
-  currentUser: string
 }
 
 const columnConfig = [
@@ -30,7 +29,7 @@ const columnConfig = [
   { key: "cancelled" as keyof TaskColumn, title: "취소", color: "bg-red-100 text-red-800" },
 ]
 
-export function ReadOnlyKanbanBoard({ tasks, currentUser }: ReadOnlyKanbanBoardProps) {
+export function ReadOnlyKanbanBoard({ tasks }: ReadOnlyKanbanBoardProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">

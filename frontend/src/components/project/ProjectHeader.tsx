@@ -7,8 +7,6 @@ interface ProjectHeaderProps {
   name: string;
   description: string;
   status: string;
-  priority: string;
-  role: string;
   onCreateTask?: () => void;
   returnPath?: string;
   returnLabel?: string;
@@ -18,26 +16,11 @@ export function ProjectHeader({
   name,
   description,
   status,
-  priority,
-  role,
   onCreateTask,
   returnPath = '/dashboard/member/projects',
   returnLabel = '프로젝트 목록으로 돌아가기',
 }: ProjectHeaderProps) {
   const navigate = useNavigate();
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case '높음':
-        return 'destructive';
-      case '중간':
-        return 'default';
-      case '낮음':
-        return 'secondary';
-      default:
-        return 'secondary';
-    }
-  };
 
   return (
     <div className="space-y-2">

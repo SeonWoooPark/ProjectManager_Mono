@@ -164,7 +164,7 @@ export function UserManagementDialog({ member, isOpen, onClose }: UserManagement
 
           {/* Admin Status */}
           <div className="flex items-center space-x-2">
-            <Checkbox id="admin" checked={isAdmin} onCheckedChange={setIsAdmin} />
+            <Checkbox id="admin" checked={isAdmin} onCheckedChange={(checked) => setIsAdmin(checked === true)} />
             <Label htmlFor="admin" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
               관리자 권한 부여

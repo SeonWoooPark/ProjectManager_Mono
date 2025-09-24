@@ -115,7 +115,7 @@ export function ProjectsOverview() {
 
               <div className="flex items-center justify-between">
                 <div className="flex -space-x-2">
-                  {project.teamMembers.slice(0, 3).map((member, index) => (
+                  {project.teamMembers.slice(0, 3).map((member) => (
                     <div
                       key={member.id}
                       className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-medium border-2 border-background"

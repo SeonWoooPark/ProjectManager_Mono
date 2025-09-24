@@ -60,7 +60,7 @@ export function EnhancedKanbanBoard({ tasks, teamMembers }: EnhancedKanbanBoardP
     setIsTaskDialogOpen(true)
   }
 
-  const handleTaskMove = (taskId: string, fromColumn: keyof TaskColumn, toColumn: keyof TaskColumn) => {
+  const handleTaskMove = (taskId: string, fromColumn: string, toColumn: string) => {
     // In a real app, this would update the task status via API
     console.log(`Moving task ${taskId} from ${fromColumn} to ${toColumn}`)
   }

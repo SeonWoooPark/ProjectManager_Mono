@@ -188,8 +188,6 @@ export function UnifiedProjectDetailView({ userRole = "TEAM_MEMBER" }: UnifiedPr
         name={project.name}
         description={project.description}
         status={project.status}
-        priority={project.priority}
-        role={project.role}
         onCreateTask={handleCreateTask}
         returnPath={userRole === "COMPANY_MANAGER" ? "/admin/company/projects" : "/dashboard/member/projects"}
         returnLabel="프로젝트 목록으로 돌아가기"
@@ -211,7 +209,6 @@ export function UnifiedProjectDetailView({ userRole = "TEAM_MEMBER" }: UnifiedPr
         kanbanTasks={project.kanbanTasks}
         manager={project.manager}
         currentUser="김철수"
-        userRole={userRole}
       />
     </div>
   )
