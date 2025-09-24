@@ -52,7 +52,6 @@ function App() {
   const user = useAuthStore((state) => state.user);
 
   const getDefaultRoute = () => {
-    console.log('user', user);
     if (!user) return '/auth/login';
 
     switch (user.role_id) {

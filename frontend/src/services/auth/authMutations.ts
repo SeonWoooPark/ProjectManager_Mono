@@ -28,7 +28,6 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: (data: LoginRequestDto) => authService.login(data),
     onSuccess: (data) => {
-      console.log('data', data);
       // Auth 상태 설정
       setAuth(data.user, data.access_token);
 
