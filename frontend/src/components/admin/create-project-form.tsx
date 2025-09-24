@@ -7,12 +7,6 @@ import { Input } from "@components/ui/input"
 import { Label } from "@components/ui/label"
 import { Textarea } from "@components/ui/textarea"
 import { Checkbox } from "@components/ui/checkbox"
-import { Calendar } from "@components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@components/ui/popover"
-import { CalendarIcon } from "lucide-react"
-import { format } from "date-fns"
-import { ko } from "date-fns/locale"
-import { cn } from "@/lib/utils"
 
 
 // Mock team members data
@@ -28,8 +22,8 @@ export function CreateProjectForm() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    startDate: undefined as Date | undefined,
-    endDate: undefined as Date | undefined,
+    startDate: "",
+    endDate: "",
     selectedMembers: [] as string[],
   })
   const [isLoading, setIsLoading] = useState(false)
@@ -80,60 +74,6 @@ export function CreateProjectForm() {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>시작일</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full justify-start text-left font-normal bg-transparent",
-                  !formData.startDate && "text-muted-foreground",
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {formData.startDate ? format(formData.startDate, "PPP", { locale: ko }) : "시작일을 선택하세요"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={formData.startDate}
-                onSelect={(date) => setFormData({ ...formData, startDate: date })}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-
-        <div className="space-y-2">
-          <Label>종료일</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full justify-start text-left font-normal bg-transparent",
-                  !formData.endDate && "text-muted-foreground",
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {formData.endDate ? format(formData.endDate, "PPP", { locale: ko }) : "종료일을 선택하세요"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={formData.endDate}
-                onSelect={(date) => setFormData({ ...formData, endDate: date })}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-      </div>
-
       <div className="space-y-3">
         <Label>팀원 선택</Label>
         <div className="border rounded-lg p-4 space-y-3 max-h-48 overflow-y-auto">
@@ -156,6 +96,29 @@ export function CreateProjectForm() {
           ))}
         </div>
         <p className="text-sm text-muted-foreground">선택된 팀원: {formData.selectedMembers.length}명</p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-2">
+          <Label htmlFor="startDate">시작일</Label>
+          <Input
+            id="startDate"
+            type="date"
+            value={formData.startDate}
+            onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+            required
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="endDate">종료일</Label>
+          <Input
+            id="endDate"
+            type="date"
+            value={formData.endDate}
+            onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+            required
+          />
+        </div>
       </div>
 
       <div className="flex gap-3">

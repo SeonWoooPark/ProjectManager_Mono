@@ -153,29 +153,32 @@ export function MemberTasksView() {
                   placeholder="작업에 대한 상세 설명을 입력하세요"
                 />
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="project">프로젝트</Label>
-                <Select value={newTask.project} onValueChange={(value) => setNewTask({ ...newTask, project: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="프로젝트 선택" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {uniqueProjects.map((project) => (
-                      <SelectItem key={project} value={project}>
-                        {project}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="dueDate">마감일</Label>
-                <Input
-                  id="dueDate"
-                  type="date"
-                  value={newTask.dueDate}
-                  onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
-                />
+              <div className="flex gap-4 justify-between">
+                <div className="flex-1 grid gap-2">
+                  <Label htmlFor="project">프로젝트</Label>
+                  <Select value={newTask.project} onValueChange={(value) => setNewTask({ ...newTask, project: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="프로젝트 선택" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {uniqueProjects.map((project) => (
+                        <SelectItem key={project} value={project}>
+                          {project}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="dueDate">마감일</Label>
+                  <Input
+                    id="dueDate"
+                    type="date"
+                    value={newTask.dueDate}
+                    onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
+                    // className="w-[180px]"
+                  />
+                </div>
               </div>
             </div>
             <DialogFooter>
