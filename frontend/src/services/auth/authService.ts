@@ -163,6 +163,8 @@ export const authService = {
    * 초대 코드 유효성 확인
    */
   async validateInvitationCode(code: string): Promise<{ valid: boolean; company_name?: string }> {
+    // 아직 백엔드에 해당 api 구현 x
+
     const response = await api.get<SuccessResponse<{ valid: boolean; company_name?: string }>>(
       `/auth/validate-invitation?code=${code}`
     );

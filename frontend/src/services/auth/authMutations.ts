@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { toast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/use-toast';
 import { authService } from './authService';
 import { useAuthStore } from '@/store/authStore';
 import type {
@@ -21,51 +21,54 @@ import type {
  * 로그인 훅
  */
 export const useLogin = () => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (data: LoginRequestDto) => authService.login(data),
     onSuccess: (data) => {
+      console.log('data', data);
       // Auth 상태 설정
       setAuth(data.user, data.access_token);
-      
+
       // 캐시 무효화
       queryClient.invalidateQueries({ queryKey: ['user'] });
-      
+
       // 성공 메시지
       toast({
         title: '로그인 성공',
         description: `환영합니다, ${data.user.user_name}님!`,
       });
 
-      // 역할별 리다이렉트
-      switch (data.user.role_id) {
-        case 1: // SYSTEM_ADMIN
-          navigate('/admin/dashboard');
-          break;
-        case 2: // COMPANY_MANAGER
-          if (data.user.company && !data.user.company.is_approved) {
-            navigate('/auth/pending-approval');
-          } else {
-            navigate('/dashboard');
-          }
-          break;
-        case 3: // TEAM_MEMBER
-          if (data.user.status_id === 3) { // PENDING
-            navigate('/auth/pending-approval');
-          } else {
-            navigate('/dashboard');
-          }
-          break;
-        default:
-          navigate('/');
-      }
+      // // 역할별 리다이렉트
+      // switch (data.user.role_id) {
+      //   case 1: // SYSTEM_ADMIN
+      //     navigate('/admin/system');
+      //     break;
+      //   case 2: // COMPANY_MANAGER
+      //     if (data.user.company && !data.user.company.is_approved) {
+      //       navigate('/auth/pending-approval');
+      //     } else {
+      //       navigate('/admin/company');
+      //     }
+      //     break;
+      //   case 3: // TEAM_MEMBER
+      //     if (data.user.status_id === 3) {
+      //       // PENDING
+      //       navigate('/auth/pending-approval');
+      //     } else {
+      //       navigate('/dashboard/member');
+      //     }
+      //     break;
+      //   default:
+      //     // navigate('/auth/login');
+      //     break;
+      // }
     },
     onError: (error: any) => {
-      const errorMessage = error.response?.data?.error?.message;
-      const errorCode = error.response?.data?.error?.code;
+      const errorMessage = error.response?.data?.message;
+      const errorCode = error.response?.data?.code;
 
       if (errorCode === 'INVALID_CREDENTIALS') {
         toast({
@@ -103,24 +106,24 @@ export const useLogout = () => {
     onSuccess: () => {
       // 상태 초기화
       logout();
-      
+
       // 모든 캐시 클리어
       queryClient.clear();
-      
+
       // 성공 메시지
       toast({
         title: '로그아웃',
         description: '안전하게 로그아웃되었습니다.',
       });
-      
+
       // 로그인 페이지로 이동
-      navigate('/login');
+      navigate('/auth/login');
     },
     onError: () => {
       // 에러가 발생해도 로컬 상태는 클리어
       logout();
       queryClient.clear();
-      navigate('/login');
+      navigate('/auth/login');
     },
   });
 };
@@ -136,8 +139,7 @@ export const useSignupCompanyManager = () => {
   const navigate = useNavigate();
 
   return useMutation({
-    mutationFn: (data: CompanyManagerSignupDto) => 
-      authService.signupCompanyManager(data),
+    mutationFn: (data: CompanyManagerSignupDto) => authService.signupCompanyManager(data),
     onSuccess: () => {
       toast({
         title: '회원가입 완료',
@@ -146,8 +148,8 @@ export const useSignupCompanyManager = () => {
       navigate('/auth/pending-approval');
     },
     onError: (error: any) => {
-      const errorCode = error.response?.data?.error?.code;
-      const errorMessage = error.response?.data?.error?.message;
+      const errorCode = error.response?.data?.code;
+      const errorMessage = error.response?.data?.message;
 
       if (errorCode === 'EMAIL_ALREADY_EXISTS') {
         toast({
@@ -179,8 +181,7 @@ export const useSignupTeamMember = () => {
   const navigate = useNavigate();
 
   return useMutation({
-    mutationFn: (data: TeamMemberSignupDto) => 
-      authService.signupTeamMember(data),
+    mutationFn: (data: TeamMemberSignupDto) => authService.signupTeamMember(data),
     onSuccess: () => {
       toast({
         title: '회원가입 완료',
@@ -224,8 +225,7 @@ export const useSignupTeamMember = () => {
  */
 export const useForgotPassword = () => {
   return useMutation({
-    mutationFn: (data: ForgotPasswordDto) => 
-      authService.forgotPassword(data),
+    mutationFn: (data: ForgotPasswordDto) => authService.forgotPassword(data),
     onSuccess: () => {
       toast({
         title: '이메일 전송 완료',
@@ -260,8 +260,7 @@ export const useResetPassword = () => {
   const navigate = useNavigate();
 
   return useMutation({
-    mutationFn: (data: ResetPasswordDto) => 
-      authService.resetPassword(data),
+    mutationFn: (data: ResetPasswordDto) => authService.resetPassword(data),
     onSuccess: () => {
       toast({
         title: '비밀번호 변경 완료',
@@ -301,13 +300,12 @@ export const useApproveCompany = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: ApproveCompanyDto) => 
-      authService.approveCompany(data),
+    mutationFn: (data: ApproveCompanyDto) => authService.approveCompany(data),
     onSuccess: (_, variables) => {
       // 관련 쿼리 무효화
       queryClient.invalidateQueries({ queryKey: ['pending-companies'] });
       queryClient.invalidateQueries({ queryKey: ['companies'] });
-      
+
       toast({
         title: variables.is_approved ? '승인 완료' : '거부 완료',
         description: `회사 ${variables.is_approved ? '승인' : '거부'} 처리가 완료되었습니다.`,
@@ -331,13 +329,12 @@ export const useApproveMember = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: ApproveMemberDto) => 
-      authService.approveMember(data),
+    mutationFn: (data: ApproveMemberDto) => authService.approveMember(data),
     onSuccess: (_, variables) => {
       // 관련 쿼리 무효화
       queryClient.invalidateQueries({ queryKey: ['pending-members'] });
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
-      
+
       toast({
         title: variables.is_approved ? '승인 완료' : '거부 완료',
         description: `팀원 ${variables.is_approved ? '승인' : '거부'} 처리가 완료되었습니다.`,
@@ -363,8 +360,7 @@ export const useApproveMember = () => {
  */
 export const useCheckEmail = () => {
   return useMutation({
-    mutationFn: (email: string) => 
-      authService.checkEmailAvailability(email),
+    mutationFn: (email: string) => authService.checkEmailAvailability(email),
   });
 };
 
@@ -373,7 +369,6 @@ export const useCheckEmail = () => {
  */
 export const useValidateInvitationCode = () => {
   return useMutation({
-    mutationFn: (code: string) => 
-      authService.validateInvitationCode(code),
+    mutationFn: (code: string) => authService.validateInvitationCode(code),
   });
 };

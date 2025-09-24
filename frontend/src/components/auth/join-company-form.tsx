@@ -14,7 +14,7 @@ import type { TeamMemberSignupDto } from "@/types/auth.types"
 const joinCompanySchema = z.object({
   invitation_code: z.string()
     .min(6, '초대 코드는 최소 6자 이상이어야 합니다')
-    .max(10, '초대 코드는 최대 10자까지 입력 가능합니다'),
+    // .max(10, '초대 코드는 최대 10자까지 입력 가능합니다'),
 })
 
 type JoinCompanyFormValues = z.infer<typeof joinCompanySchema>
@@ -23,7 +23,9 @@ export function JoinCompanyForm() {
   const navigate = useNavigate()
   const signupMutation = useSignupTeamMember()
   const validateCodeMutation = useValidateInvitationCode()
-  const [validatedCompanyName, setValidatedCompanyName] = useState<string>('')
+
+  // 아직 백엔드에 초대 코드 검증 api가 없어서 현재는 회사 값 defalut 설정
+  const [validatedCompanyName, setValidatedCompanyName] = useState<string>('Comp')
   
   const form = useForm<JoinCompanyFormValues>({
     resolver: zodResolver(joinCompanySchema),
@@ -118,13 +120,13 @@ export function JoinCompanyForm() {
           </Alert>
         )}
 
-        {validateCodeMutation.isError && (
+        {/* {validateCodeMutation.isError && (
           <Alert className="border-red-200 bg-red-50">
             <AlertDescription className="text-red-800">
               유효하지 않은 초대 코드입니다. 다시 확인해주세요.
             </AlertDescription>
           </Alert>
-        )}
+        )} */}
 
         <div className="pt-4">
           <Button 

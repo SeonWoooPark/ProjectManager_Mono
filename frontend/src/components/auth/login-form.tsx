@@ -39,9 +39,9 @@ export function LoginForm() {
   const handleDemoLogin = (role: "system" | "company" | "member") => {
     // 데모 모드용 테스트 계정
     const demoAccounts = {
-      system: { email: "admin@system.com", password: "admin123!" },
-      company: { email: "admin@company.com", password: "admin123!" },
-      member: { email: "member@company.com", password: "member123!" },
+      system: { email: "admin@system.com", password: "Admin123!@#" },
+      company: { email: "manager@sample.com", password: "Manager123!@#" },
+      member: { email: "member@company.com", password: "Member123!" },
     }
     
     const account = demoAccounts[role]
