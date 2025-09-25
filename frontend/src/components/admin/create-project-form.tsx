@@ -1,33 +1,64 @@
-import type React from "react"
+import type { FormEvent } from 'react';
+import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Button } from '@components/ui/button';
+import { Input } from '@components/ui/input';
+import { Label } from '@components/ui/label';
+import { Textarea } from '@components/ui/textarea';
+import { Checkbox } from '@components/ui/checkbox';
+import LoadingSpinner from '@components/atoms/LoadingSpinner';
+import { useCompanyMembers } from '@/services/members/membersQueries';
+import { projectsService } from '@/services/projects/projectsService';
+import { projectsQueryKeys } from '@/services/projects/projectsQueries';
+import { useToast } from '@components/ui/use-toast';
 
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { Button } from "@components/ui/button"
-import { Input } from "@components/ui/input"
-import { Label } from "@components/ui/label"
-import { Textarea } from "@components/ui/textarea"
-import { Checkbox } from "@components/ui/checkbox"
-
-
-// Mock team members data
-const teamMembers = [
-  { id: "1", name: "김철수", email: "kim@company.com", role: "개발자" },
-  { id: "2", name: "이영희", email: "lee@company.com", role: "디자이너" },
-  { id: "3", name: "박민수", email: "park@company.com", role: "기획자" },
-  { id: "4", name: "정수진", email: "jung@company.com", role: "개발자" },
-  { id: "5", name: "최영수", email: "choi@company.com", role: "마케터" },
-]
+interface FormState {
+  name: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  selectedMembers: string[];
+}
 
 export function CreateProjectForm() {
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    startDate: "",
-    endDate: "",
-    selectedMembers: [] as string[],
-  })
-  const [isLoading, setIsLoading] = useState(false)
-  const navigate = useNavigate()
+  const [formData, setFormData] = useState<FormState>({
+    name: '',
+    description: '',
+    startDate: '',
+    endDate: '',
+    selectedMembers: [],
+  });
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const {
+    data: membersData,
+    isLoading: membersLoading,
+    isError: membersError,
+  } = useCompanyMembers();
+
+  const availableMembers = useMemo(() => membersData?.members ?? [], [membersData?.members]);
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      projectsService.createProject({
+        project_name: formData.name,
+        project_description: formData.description,
+        start_date: formData.startDate,
+        end_date: formData.endDate,
+        member_ids: formData.selectedMembers,
+      }),
+    onSuccess: () => {
+      toast({ title: '프로젝트가 성공적으로 생성되었습니다.' });
+      queryClient.invalidateQueries({ queryKey: projectsQueryKeys.list(undefined) });
+      navigate('/admin/company/projects');
+    },
+    onError: () => {
+      toast({ title: '프로젝트 생성에 실패했습니다.', variant: 'destructive' });
+    },
+  });
 
   const handleMemberToggle = (memberId: string) => {
     setFormData((prev) => ({
@@ -35,18 +66,24 @@ export function CreateProjectForm() {
       selectedMembers: prev.selectedMembers.includes(memberId)
         ? prev.selectedMembers.filter((id) => id !== memberId)
         : [...prev.selectedMembers, memberId],
-    }))
+    }));
+  };
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    mutation.mutate();
+  };
+
+  if (membersLoading) {
+    return <LoadingSpinner />;
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-
-    // Simulate project creation
-    setTimeout(() => {
-      navigate("/admin/company/projects")
-      setIsLoading(false)
-    }, 1000)
+  if (membersError) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        팀원 정보를 불러오는 중 오류가 발생했습니다.
+      </div>
+    );
   }
 
   return (
@@ -77,28 +114,32 @@ export function CreateProjectForm() {
       <div className="space-y-3">
         <Label>팀원 선택</Label>
         <div className="border rounded-lg p-4 space-y-3 max-h-48 overflow-y-auto">
-          {teamMembers.map((member) => (
-            <div key={member.id} className="flex items-center space-x-3">
-              <Checkbox
-                id={member.id}
-                checked={formData.selectedMembers.includes(member.id)}
-                onCheckedChange={() => handleMemberToggle(member.id)}
-              />
-              <div className="flex-1">
-                <Label htmlFor={member.id} className="text-sm font-medium cursor-pointer">
-                  {member.name}
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  {member.role} • {member.email}
-                </p>
+          {availableMembers.length === 0 ? (
+            <p className="text-sm text-muted-foreground">등록된 팀원이 없습니다. 먼저 팀원을 초대하세요.</p>
+          ) : (
+            availableMembers.map((member) => (
+              <div key={member.id} className="flex items-center space-x-3">
+                <Checkbox
+                  id={member.id}
+                  checked={formData.selectedMembers.includes(member.id)}
+                  onCheckedChange={() => handleMemberToggle(member.id)}
+                />
+                <div className="flex-1">
+                  <Label htmlFor={member.id} className="text-sm font-medium cursor-pointer">
+                    {member.user_name}
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    {member.role_name} • {member.email}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
         <p className="text-sm text-muted-foreground">선택된 팀원: {formData.selectedMembers.length}명</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="grid gap-2">
           <Label htmlFor="startDate">시작일</Label>
           <Input
@@ -122,13 +163,13 @@ export function CreateProjectForm() {
       </div>
 
       <div className="flex gap-3">
-        <Button type="submit" disabled={isLoading} className="flex-1">
-          {isLoading ? "생성 중..." : "프로젝트 생성"}
+        <Button type="submit" disabled={mutation.isPending} className="flex-1">
+          {mutation.isPending ? '생성 중...' : '프로젝트 생성'}
         </Button>
         <Button type="button" variant="outline" onClick={() => navigate(-1)} className="bg-transparent">
           취소
         </Button>
       </div>
     </form>
-  )
+  );
 }

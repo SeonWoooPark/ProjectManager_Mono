@@ -39,31 +39,6 @@ export const useLogin = () => {
         title: '로그인 성공',
         description: `환영합니다, ${data.user.user_name}님!`,
       });
-
-      // // 역할별 리다이렉트
-      // switch (data.user.role_id) {
-      //   case 1: // SYSTEM_ADMIN
-      //     navigate('/admin/system');
-      //     break;
-      //   case 2: // COMPANY_MANAGER
-      //     if (data.user.company && !data.user.company.is_approved) {
-      //       navigate('/auth/pending-approval');
-      //     } else {
-      //       navigate('/admin/company');
-      //     }
-      //     break;
-      //   case 3: // TEAM_MEMBER
-      //     if (data.user.status_id === 3) {
-      //       // PENDING
-      //       navigate('/auth/pending-approval');
-      //     } else {
-      //       navigate('/dashboard/member');
-      //     }
-      //     break;
-      //   default:
-      //     // navigate('/auth/login');
-      //     break;
-      // }
     },
     onError: (error: any) => {
       const errorMessage = error.response?.data?.message;

@@ -1,12 +1,13 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card"
-import { Button } from "@components/ui/button"
-import { Badge } from "@components/ui/badge"
-import { Avatar, AvatarFallback } from "@components/ui/avatar"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@components/ui/table"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select"
-import { Input } from "@components/ui/input"
-import { Label } from "@components/ui/label"
-import { Textarea } from "@components/ui/textarea"
+import { useState, useMemo } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@components/ui/card';
+import { Button } from '@components/ui/button';
+import { Badge } from '@components/ui/badge';
+import { Avatar, AvatarFallback } from '@components/ui/avatar';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@components/ui/select';
+import { Input } from '@components/ui/input';
+import { Label } from '@components/ui/label';
+import { Textarea } from '@components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -15,146 +16,146 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@components/ui/dialog"
-import { UserManagementDialog } from "./user-management-dialog"
-import { JoinRequestsCard } from "./join-requests-card"
-import { Users, Search, MoreHorizontal, UserPlus, Shield, Settings } from "lucide-react"
-import { useState } from "react"
+} from '@components/ui/dialog';
+import { UserManagementDialog } from './user-management-dialog';
+import { JoinRequestsCard } from './join-requests-card';
+import { Search, MoreHorizontal, UserPlus, Settings } from 'lucide-react';
+import LoadingSpinner from '@components/atoms/LoadingSpinner';
+import { useCompanyMembers, usePendingMembers } from '@/services/members/membersQueries';
+import type { MemberSummary } from '@/types/members.types';
 
-// Mock data for team members
-const teamMembers = [
-  {
-    id: "1",
-    name: "김철수",
-    email: "kim@company.com",
-    role: "개발자",
-    department: "개발팀",
-    joinDate: "2023-03-15",
-    lastActive: "2024-01-18 15:30",
-    status: "active" as const,
-    permissions: ["프로젝트 생성", "작업 관리", "팀원 초대"],
-    completedTasks: 24,
-    currentProjects: 3,
-    isAdmin: true,
-  },
-  {
-    id: "2",
-    name: "이영희",
-    email: "lee@company.com",
-    role: "디자이너",
-    department: "디자인팀",
-    joinDate: "2023-01-20",
-    lastActive: "2024-01-18 14:15",
-    status: "active" as const,
-    permissions: ["작업 관리"],
-    completedTasks: 18,
-    currentProjects: 2,
-    isAdmin: false,
-  },
-  {
-    id: "3",
-    name: "박민수",
-    email: "park@company.com",
-    role: "기획자",
-    department: "기획팀",
-    joinDate: "2022-11-10",
-    lastActive: "2024-01-17 18:45",
-    status: "active" as const,
-    permissions: ["작업 관리", "프로젝트 보기"],
-    completedTasks: 32,
-    currentProjects: 2,
-    isAdmin: false,
-  },
-  {
-    id: "4",
-    name: "정수진",
-    email: "jung@company.com",
-    role: "개발자",
-    department: "개발팀",
-    joinDate: "2023-06-01",
-    lastActive: "2024-01-15 10:20",
-    status: "inactive" as const,
-    permissions: ["작업 관리"],
-    completedTasks: 15,
-    currentProjects: 1,
-    isAdmin: false,
-  },
-]
+interface DialogMember {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  department: string;
+  joinDate: string;
+  lastActive: string;
+  status: 'active' | 'inactive';
+  permissions: string[];
+  completedTasks: number;
+  currentProjects: number;
+  isAdmin: boolean;
+}
 
-const joinRequests = [
-  {
-    id: "1",
-    name: "최영수",
-    email: "choi@example.com",
-    requestedRole: "마케터",
-    inviteCode: "INV-ABC123",
-    requestDate: "2024-01-18",
-    invitedBy: "김철수",
-  },
-  {
-    id: "2",
-    name: "한지민",
-    email: "han@example.com",
-    requestedRole: "QA",
-    inviteCode: "INV-DEF456",
-    requestDate: "2024-01-17",
-    invitedBy: "김철수",
-  },
-]
+const AVAILABLE_PERMISSIONS = [
+  '프로젝트 생성',
+  '프로젝트 수정',
+  '프로젝트 삭제',
+  '작업 생성',
+  '작업 수정',
+  '작업 삭제',
+  '팀원 초대',
+  '팀원 관리',
+  '역할 관리',
+  '회사 설정',
+];
+
+const ROLE_LABELS: Record<string, string> = {
+  SYSTEM_ADMIN: '시스템 관리자',
+  COMPANY_MANAGER: '회사 관리자',
+  TEAM_MEMBER: '팀원',
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  ACTIVE: '활성',
+  INACTIVE: '비활성',
+  PENDING: '승인 대기',
+};
+
+const mapMemberToDialog = (member: MemberSummary): DialogMember => {
+  return {
+    id: member.id,
+    name: member.user_name,
+    email: member.email,
+    role: ROLE_LABELS[member.role_name] ?? member.role_name,
+    department: '미지정',
+    joinDate: member.created_at ? member.created_at.slice(0, 10) : '정보 없음',
+    lastActive: '정보 없음',
+    status: member.status_name === 'ACTIVE' ? 'active' : 'inactive',
+    permissions: [],
+    completedTasks: member.tasks_completed,
+    currentProjects: member.projects_assigned,
+    isAdmin: member.role_name === '회사 관리자',
+  };
+};
 
 export function TeamManagementInterface() {
-  const [selectedMember, setSelectedMember] = useState<(typeof teamMembers)[0] | null>(null)
-  const [isManagementDialogOpen, setIsManagementDialogOpen] = useState(false)
-  const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [roleFilter, setRoleFilter] = useState("all")
-  const [statusFilter, setStatusFilter] = useState("all")
+  const [selectedMember, setSelectedMember] = useState<DialogMember | null>(null);
+  const [isManagementDialogOpen, setIsManagementDialogOpen] = useState(false);
+  const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [newRole, setNewRole] = useState({
-    name: "",
-    description: "",
+    name: '',
+    description: '',
     permissions: [] as string[],
-  })
+  });
 
-  const availablePermissions = [
-    "프로젝트 생성",
-    "프로젝트 수정",
-    "프로젝트 삭제",
-    "작업 생성",
-    "작업 수정",
-    "작업 삭제",
-    "팀원 초대",
-    "팀원 관리",
-    "역할 관리",
-    "회사 설정",
-  ]
+  const {
+    data: membersData,
+    isLoading: membersLoading,
+    isError: membersError,
+  } = useCompanyMembers();
 
-  const filteredMembers = teamMembers.filter((member) => {
-    const matchesSearch =
-      member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.email.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesRole = roleFilter === "all" || member.role === roleFilter
-    const matchesStatus = statusFilter === "all" || member.status === statusFilter
-    return matchesSearch && matchesRole && matchesStatus
-  })
+  const {
+    data: pendingMembersData,
+    isLoading: pendingLoading,
+    isError: pendingError,
+  } = usePendingMembers();
 
-  const handleMemberManagement = (member: (typeof teamMembers)[0]) => {
-    setSelectedMember(member)
-    setIsManagementDialogOpen(true)
-  }
+  const teamMembers: MemberSummary[] = membersData?.members ?? [];
+
+  const roleOptions = useMemo(() => {
+    const roles = new Set<string>();
+    teamMembers.forEach((member) => roles.add(member.role_name));
+    return Array.from(roles);
+  }, [teamMembers]);
+
+  const filteredMembers = useMemo(() => {
+    return teamMembers.filter((member) => {
+      const matchesSearch =
+        member.user_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        member.email.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesRole = roleFilter === 'all' || member.role_name === roleFilter;
+      const matchesStatus = statusFilter === 'all' || member.status_name === statusFilter;
+      return matchesSearch && matchesRole && matchesStatus;
+    });
+  }, [teamMembers, searchTerm, roleFilter, statusFilter]);
+
+  const joinRequests = useMemo(() => {
+    const pendingMembers = pendingMembersData?.pending_members ?? [];
+    return pendingMembers.map((member) => ({
+      id: member.id,
+      name: member.user_name,
+      email: member.email,
+      requestedRole: ROLE_LABELS[member.role_name] ?? member.role_name,
+      inviteCode: '-',
+      requestDate: member.created_at ? member.created_at.slice(0, 10) : '알 수 없음',
+      invitedBy: '관리자',
+    }));
+  }, [pendingMembersData?.pending_members]);
+
+  const handleMemberManagement = (member: MemberSummary) => {
+    setSelectedMember(mapMemberToDialog(member));
+    setIsManagementDialogOpen(true);
+  };
 
   const handleApproveRequest = (requestId: string) => {
-    console.log("Approving join request:", requestId)
-  }
+    console.log('Approving join request:', requestId);
+  };
 
   const handleRejectRequest = (requestId: string) => {
-    console.log("Rejecting join request:", requestId)
-  }
+    console.log('Rejecting join request:', requestId);
+  };
 
   const handleCreateRole = () => {
-    console.log("Creating new role:", newRole)
-    setIsRoleDialogOpen(false)
-    setNewRole({ name: "", description: "", permissions: [] })
-  }
+    console.log('Creating new role:', newRole);
+    setIsRoleDialogOpen(false);
+    setNewRole({ name: '', description: '', permissions: [] });
+  };
 
   const togglePermission = (permission: string) => {
     setNewRole((prev) => ({
@@ -162,7 +163,21 @@ export function TeamManagementInterface() {
       permissions: prev.permissions.includes(permission)
         ? prev.permissions.filter((p) => p !== permission)
         : [...prev.permissions, permission],
-    }))
+    }));
+  };
+
+  if (membersLoading || pendingLoading) {
+    return <LoadingSpinner />;
+  }
+
+  if (membersError || pendingError) {
+    return (
+      <Card>
+        <CardContent className="py-10 text-center">
+          <p className="text-muted-foreground">팀원 정보를 불러오는 중 오류가 발생했습니다.</p>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
@@ -207,7 +222,7 @@ export function TeamManagementInterface() {
                 <div className="grid gap-2">
                   <Label>권한 설정</Label>
                   <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto border rounded-md p-3">
-                    {availablePermissions.map((permission) => (
+                    {AVAILABLE_PERMISSIONS.map((permission) => (
                       <div key={permission} className="flex items-center space-x-2">
                         <input
                           type="checkbox"
@@ -239,184 +254,158 @@ export function TeamManagementInterface() {
         </div>
       </div>
 
-      {/* Team Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">총 팀원</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-foreground">{teamMembers.length}</div>
-            <p className="text-xs text-muted-foreground">명</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">활성 멤버</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-foreground">
-              {teamMembers.filter((m) => m.status === "active").length}
-            </div>
-            <p className="text-xs text-muted-foreground">명</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">관리자</CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-foreground">{teamMembers.filter((m) => m.isAdmin).length}</div>
-            <p className="text-xs text-muted-foreground">명</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">가입 요청</CardTitle>
-            <UserPlus className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-foreground">{joinRequests.length}</div>
-            <p className="text-xs text-muted-foreground">건</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Join Requests */}
-      <JoinRequestsCard requests={joinRequests} onApprove={handleApproveRequest} onReject={handleRejectRequest} />
-
-      {/* Filters */}
       <Card>
         <CardHeader>
-          <CardTitle>팀원 필터</CardTitle>
-          <CardDescription>이름, 역할, 상태로 팀원을 필터링하세요</CardDescription>
+          <CardTitle>팀원 개요</CardTitle>
+          <CardDescription>현재 등록된 팀원의 역할과 상태를 확인하세요</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="이름 또는 이메일로 검색..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="border rounded-lg p-4">
+              <div className="text-sm text-muted-foreground">총 팀원 수</div>
+              <div className="text-2xl font-bold text-foreground">{teamMembers.length}명</div>
+            </div>
+            <div className="border rounded-lg p-4">
+              <div className="text-sm text-muted-foreground">활성 팀원</div>
+              <div className="text-2xl font-bold text-foreground">
+                {teamMembers.filter((member) => member.status_name === 'ACTIVE').length}명
               </div>
             </div>
-            <Select value={roleFilter} onValueChange={setRoleFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="역할 필터" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">모든 역할</SelectItem>
-                <SelectItem value="개발자">개발자</SelectItem>
-                <SelectItem value="디자이너">디자이너</SelectItem>
-                <SelectItem value="기획자">기획자</SelectItem>
-                <SelectItem value="마케터">마케터</SelectItem>
-                <SelectItem value="QA">QA</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="상태 필터" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">모든 상태</SelectItem>
-                <SelectItem value="active">활성</SelectItem>
-                <SelectItem value="inactive">비활성</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="border rounded-lg p-4">
+              <div className="text-sm text-muted-foreground">승인 대기</div>
+              <div className="text-2xl font-bold text-foreground">{joinRequests.length}명</div>
+            </div>
+            <div className="border rounded-lg p-4">
+              <div className="text-sm text-muted-foreground">평균 프로젝트 참여</div>
+              <div className="text-2xl font-bold text-foreground">
+                {teamMembers.length > 0
+                  ? (teamMembers.reduce((sum, member) => sum + member.projects_assigned, 0) / teamMembers.length).toFixed(1)
+                  : '0.0'}개
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Team Members Table */}
       <Card>
         <CardHeader>
-          <CardTitle>팀원 목록</CardTitle>
-          <CardDescription>모든 팀원의 상세 정보와 관리 옵션</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>팀원 목록</CardTitle>
+              <CardDescription>필터와 검색을 이용해 팀원을 관리하세요</CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>팀원</TableHead>
-                <TableHead>역할</TableHead>
-                <TableHead>부서</TableHead>
-                <TableHead>가입일</TableHead>
-                <TableHead>마지막 활동</TableHead>
-                <TableHead>상태</TableHead>
-                <TableHead>권한</TableHead>
-                <TableHead>작업</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredMembers.map((member) => (
-                <TableRow key={member.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="w-8 h-8">
-                        <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{member.name}</span>
-                          {member.isAdmin && (
-                            <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/20">
-                              관리자
-                            </Badge>
-                          )}
-                        </div>
-                        <span className="text-sm text-muted-foreground">{member.email}</span>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{member.role}</TableCell>
-                  <TableCell>{member.department}</TableCell>
-                  <TableCell>{member.joinDate}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{member.lastActive}</TableCell>
-                  <TableCell>
-                    <Badge variant={member.status === "active" ? "default" : "secondary"}>
-                      {member.status === "active" ? "활성" : "비활성"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm text-muted-foreground">{member.permissions.length}개 권한</div>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleMemberManagement(member)}
-                      className="h-8 w-8 p-0"
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
+          <div className="flex flex-col gap-4 mb-4 md:flex-row md:items-center">
+            <div className="flex items-center gap-2 flex-1">
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="이름 또는 이메일 검색"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
+              <SelectTrigger className="w-full md:w-40">
+                <SelectValue placeholder="역할" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">모든 역할</SelectItem>
+                {roleOptions.map((role) => (
+                  <SelectItem key={role} value={role}>
+                    {ROLE_LABELS[role] ?? role}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full md:w-40">
+                <SelectValue placeholder="상태" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">모든 상태</SelectItem>
+                <SelectItem value="ACTIVE">활성</SelectItem>
+                <SelectItem value="INACTIVE">비활성</SelectItem>
+                <SelectItem value="PENDING">승인 대기</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="overflow-x-auto rounded-lg border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>이름</TableHead>
+                  <TableHead>역할</TableHead>
+                  <TableHead>이메일</TableHead>
+                  <TableHead className="text-center">참여 프로젝트</TableHead>
+                  <TableHead className="text-center">완료 작업</TableHead>
+                  <TableHead className="text-center">상태</TableHead>
+                  <TableHead className="text-right">관리</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredMembers.map((member) => (
+                  <TableRow key={member.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="w-9 h-9 border">
+                          <AvatarFallback>{member.user_name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium text-foreground">{member.user_name}</p>
+                          <p className="text-xs text-muted-foreground">가입: {member.created_at.slice(0, 10)}</p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{ROLE_LABELS[member.role_name] ?? member.role_name}</Badge>
+                    </TableCell>
+                    <TableCell>{member.email}</TableCell>
+                    <TableCell className="text-center">{member.projects_assigned}</TableCell>
+                    <TableCell className="text-center">{member.tasks_completed}</TableCell>
+                    <TableCell className="text-center">
+                      <Badge
+                        variant={member.status_name === 'ACTIVE' ? 'default' : 'outline'}
+                        className={member.status_name === 'ACTIVE' ? 'bg-primary text-primary-foreground' : ''}
+                      >
+                        {STATUS_LABELS[member.status_name] ?? member.status_name}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleMemberManagement(member)}
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            {filteredMembers.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">조건에 맞는 팀원이 없습니다.</div>
+            )}
+          </div>
         </CardContent>
       </Card>
+
+      <JoinRequestsCard
+        requests={joinRequests}
+        onApprove={handleApproveRequest}
+        onReject={handleRejectRequest}
+      />
 
       {selectedMember && (
         <UserManagementDialog
           member={selectedMember}
           isOpen={isManagementDialogOpen}
-          onClose={() => {
-            setIsManagementDialogOpen(false)
-            setSelectedMember(null)
-          }}
+          onClose={() => setIsManagementDialogOpen(false)}
         />
       )}
     </div>
-  )
+  );
 }

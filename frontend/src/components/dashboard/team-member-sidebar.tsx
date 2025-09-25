@@ -4,6 +4,7 @@ import { User, Briefcase, CheckSquare, Users, Settings, LogOut, BarChart3 } from
 import { Link, useLocation } from 'react-router-dom';
 
 import { cn } from '@/lib/utils';
+import { useAuthStore } from '@/store/authStore';
 
 import { useLogout } from '@/services/auth/authMutations';
 
@@ -20,6 +21,8 @@ export function TeamMemberSidebar() {
   const pathname = location.pathname;
 
   const logoutMutation = useLogout();
+  const user = useAuthStore((state) => state.user);
+  const displayName = user?.user_name ?? '팀원';
 
   const handleLogout = async () => {
     logoutMutation.mutate();
@@ -32,7 +35,7 @@ export function TeamMemberSidebar() {
           <User className="h-8 w-8 text-sidebar-primary" />
           <div>
             <h1 className="text-lg font-bold text-sidebar-foreground">팀원</h1>
-            <p className="text-sm text-sidebar-foreground/70">김철수</p>
+            <p className="text-sm text-sidebar-foreground/70">{displayName}</p>
           </div>
         </div>
 

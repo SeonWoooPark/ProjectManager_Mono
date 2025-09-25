@@ -1,73 +1,123 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card"
-import { Button } from "@components/ui/button"
-import { Badge } from "@components/ui/badge"
-import { Progress } from "@components/ui/progress"
-import { Eye, Calendar, User } from "lucide-react"
-import { Link } from "react-router-dom"
+import { useMemo } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@components/ui/card';
+import { Button } from '@components/ui/button';
+import { Badge } from '@components/ui/badge';
+import { Progress } from '@components/ui/progress';
+import { Eye, Calendar, User } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import LoadingSpinner from '@components/atoms/LoadingSpinner';
+import { useProjects } from '@/services/projects/projectsQueries';
+import { useAssignedTasks } from '@/services/tasks/tasksQueries';
+import { useAuthStore } from '@/store/authStore';
+import { projectStatusBadgeVariant, projectStatusLabel, toTaskStatusKey } from '@/utils/status';
+import type { TaskSummary } from '@/types/tasks.types';
+import type { TaskStatusKey } from '@/utils/status';
 
-// Mock data for member's assigned projects
-const memberProjects = [
-  {
-    id: "1",
-    name: "모바일 앱 개발",
-    description: "새로운 모바일 애플리케이션 개발 프로젝트",
-    progress: 75,
-    status: "진행 중",
-    startDate: "2024-01-01",
-    endDate: "2024-02-15",
-    role: "개발자",
-    myTasks: {
-      total: 8,
-      completed: 6,
-      inProgress: 2,
-      todo: 0,
-    },
-    allTasks: {
-      todo: [
-        { id: "1", title: "API 문서 작성", assignee: "김철수", isMyTask: true },
-        { id: "2", title: "테스트 케이스 작성", assignee: "박민수", isMyTask: false },
-      ],
-      inProgress: [
-        { id: "3", title: "로그인 기능 구현", assignee: "김철수", isMyTask: true },
-        { id: "4", title: "UI 디자인 수정", assignee: "이영희", isMyTask: false },
-      ],
-      review: [{ id: "5", title: "회원가입 기능", assignee: "김철수", isMyTask: true }],
-      completed: [
-        { id: "6", title: "프로젝트 초기 설정", assignee: "박민수", isMyTask: false },
-        { id: "7", title: "데이터베이스 설계", assignee: "김철수", isMyTask: true },
-      ],
-      cancelled: [],
-    },
-  },
-  {
-    id: "2",
-    name: "웹사이트 리뉴얼",
-    description: "기존 웹사이트의 UI/UX 개선",
-    progress: 45,
-    status: "진행 중",
-    startDate: "2024-01-15",
-    endDate: "2024-02-28",
-    role: "개발자",
-    myTasks: {
-      total: 4,
-      completed: 2,
-      inProgress: 1,
-      todo: 1,
-    },
-    allTasks: {
-      todo: [{ id: "8", title: "반응형 테스트", assignee: "김철수", isMyTask: true }],
-      inProgress: [{ id: "9", title: "반응형 레이아웃 구현", assignee: "김철수", isMyTask: true }],
-      review: [],
-      completed: [
-        { id: "10", title: "와이어프레임 검토", assignee: "김철수", isMyTask: true },
-        { id: "11", title: "콘텐츠 마이그레이션", assignee: "최영수", isMyTask: false },
-      ],
-      cancelled: [],
-    },
-  },
-]
+interface MemberProjectCardData {
+  id: string;
+  name: string;
+  description: string;
+  progress: number;
+  status: string;
+  badgeVariant: 'default' | 'secondary' | 'outline';
+  startDate: string;
+  endDate: string;
+  role: string;
+  myTasks: {
+    total: number;
+    completed: number;
+    inProgress: number;
+    todo: number;
+  };
+}
 
 export function MemberProjectsView() {
+  const user = useAuthStore((state) => state.user);
+  const currentUserId = user?.id;
+
+  const {
+    data: projectsData,
+    isLoading: isProjectsLoading,
+    isError: isProjectsError,
+  } = useProjects();
+
+  const {
+    data: tasksData,
+    isLoading: isTasksLoading,
+    isError: isTasksError,
+  } = useAssignedTasks();
+
+  const assignedProjects: MemberProjectCardData[] = useMemo(() => {
+    if (!projectsData?.projects || !currentUserId) {
+      return [];
+    }
+
+    const tasksByProjectId = new Map<string, TaskSummary[]>();
+    if (tasksData?.tasks) {
+      for (const task of tasksData.tasks) {
+        const list = tasksByProjectId.get(task.project_id) ?? [];
+        list.push(task);
+        tasksByProjectId.set(task.project_id, list);
+      }
+    }
+
+    return projectsData.projects
+      .filter((project) => project.allocated_members.some((member) => member.user_id === currentUserId))
+      .map((project) => {
+        const projectTasks = tasksByProjectId.get(project.id) ?? [];
+        const statusCounts = projectTasks.reduce(
+          (acc, task) => {
+            const key = toTaskStatusKey(task.status_name);
+            acc[key] += 1;
+            return acc;
+          },
+          { todo: 0, inProgress: 0, review: 0, completed: 0, cancelled: 0 } as Record<TaskStatusKey, number>
+        );
+
+        return {
+          id: project.id,
+          name: project.project_name,
+          description: project.project_description || '프로젝트 설명이 없습니다.',
+          progress: Math.round(project.progress_rate ?? 0),
+          status: projectStatusLabel(project.status_name),
+          badgeVariant: projectStatusBadgeVariant(project.status_name),
+          startDate: project.start_date,
+          endDate: project.end_date,
+          role: '팀원',
+          myTasks: {
+            total: projectTasks.length,
+            completed: statusCounts.completed,
+            inProgress: statusCounts.inProgress,
+            todo: statusCounts.todo,
+          },
+        } satisfies MemberProjectCardData;
+      });
+  }, [projectsData?.projects, currentUserId, tasksData?.tasks]);
+
+  if (isProjectsLoading || isTasksLoading) {
+    return <LoadingSpinner />;
+  }
+
+  if (isProjectsError || isTasksError) {
+    return (
+      <Card>
+        <CardContent className="py-10 text-center">
+          <p className="text-muted-foreground">프로젝트 정보를 불러오는 중 오류가 발생했습니다.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!assignedProjects.length) {
+    return (
+      <Card>
+        <CardContent className="py-10 text-center space-y-2">
+          <h2 className="text-xl font-semibold">할당된 프로젝트가 없습니다.</h2>
+          <p className="text-muted-foreground">관리자에게 프로젝트 참여를 요청해 보세요.</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -77,75 +127,72 @@ export function MemberProjectsView() {
       </div>
 
       <div className="grid gap-6">
-        {memberProjects.map((project) => (
-          <Card key={project.id}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-xl">{project.name}</CardTitle>
-                  <CardDescription>{project.description}</CardDescription>
-                </div>
-                <div className="text-right">
-                  <Badge variant={project.status === "진행 중" ? "default" : "secondary"}>{project.status}</Badge>
-                  <p className="text-sm text-muted-foreground mt-1">역할: {project.role}</p>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <div className="flex items-center justify-between text-sm mb-1">
-                    <span className="text-muted-foreground">전체 진행률</span>
-                    <span className="font-medium">{project.progress}%</span>
-                  </div>
-                  <Progress value={project.progress} className="h-2" />
-                </div>
+        {assignedProjects.map((project) => {
+          const myTaskProgress = project.myTasks.total > 0
+            ? Math.round((project.myTasks.completed / project.myTasks.total) * 100)
+            : 0;
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">내 작업 진행률</span>
-                    <span className="font-medium">
-                      {Math.round((project.myTasks.completed / project.myTasks.total) * 100)}%
-                    </span>
+          return (
+            <Card key={project.id}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-xl">{project.name}</CardTitle>
+                    <CardDescription>{project.description}</CardDescription>
                   </div>
-                  <Progress
-                    value={Math.round((project.myTasks.completed / project.myTasks.total) * 100)}
-                    className="h-2"
-                  />
+                  <div className="text-right">
+                    <Badge variant={project.badgeVariant}>{project.status}</Badge>
+                    <p className="text-sm text-muted-foreground mt-1">역할: {project.role}</p>
+                  </div>
                 </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-3 w-3 text-muted-foreground" />
-                    <span className="text-muted-foreground">
-                      {project.startDate} ~ {project.endDate}
-                    </span>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <div className="flex items-center justify-between text-sm mb-1">
+                      <span className="text-muted-foreground">전체 진행률</span>
+                      <span className="font-medium">{project.progress}%</span>
+                    </div>
+                    <Progress value={project.progress} className="h-2" />
                   </div>
-                  <div className="flex items-center gap-1">
-                    <User className="h-3 w-3 text-muted-foreground" />
-                    <span className="text-muted-foreground">
-                      내 작업: {project.myTasks.completed}/{project.myTasks.total}
-                    </span>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">내 작업 진행률</span>
+                      <span className="font-medium">{myTaskProgress}%</span>
+                    </div>
+                    <Progress value={myTaskProgress} className="h-2" />
                   </div>
                 </div>
 
-                <Link to={`/dashboard/member/projects/${project.id}`}>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="bg-transparent"
-                  >
-                    <Eye className="h-3 w-3 mr-1" />
-                    상세보기
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                <div className="flex items-center justify-between">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-muted-foreground">
+                        {project.startDate} ~ {project.endDate}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <User className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-muted-foreground">
+                        내 작업: {project.myTasks.completed}/{project.myTasks.total}
+                      </span>
+                    </div>
+                  </div>
+
+                  <Link to={`/dashboard/member/projects/${project.id}`}>
+                    <Button variant="outline" size="sm" className="bg-transparent">
+                      <Eye className="h-3 w-3 mr-1" />
+                      상세보기
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
-  )
+  );
 }

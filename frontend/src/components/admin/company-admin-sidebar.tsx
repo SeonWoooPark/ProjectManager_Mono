@@ -13,6 +13,7 @@ import {
 import { Link, useLocation } from 'react-router-dom';
 
 import { cn } from '@/lib/utils';
+import { useAuthStore } from '@/store/authStore';
 
 import { useLogout } from '@/services/auth/authMutations';
 
@@ -30,6 +31,9 @@ export function CompanyAdminSidebar() {
   const pathname = location.pathname;
 
   const logoutMutation = useLogout();
+  const user = useAuthStore((state) => state.user);
+  const companyName = user?.company?.company_name ?? '회사 관리자';
+  const managerName = user?.user_name ?? '관리자';
 
   const handleLogout = async () => {
     logoutMutation.mutate();
@@ -41,8 +45,8 @@ export function CompanyAdminSidebar() {
         <div className="flex items-center gap-2 mb-6">
           <Building2 className="h-8 w-8 text-sidebar-primary" />
           <div>
-            <h1 className="text-lg font-bold text-sidebar-foreground">회사 관리자</h1>
-            <p className="text-sm text-sidebar-foreground/70">테크스타트업</p>
+            <h1 className="text-lg font-bold text-sidebar-foreground">{companyName}</h1>
+            <p className="text-sm text-sidebar-foreground/70">{managerName}</p>
           </div>
         </div>
 

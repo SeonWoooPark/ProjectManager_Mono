@@ -3,29 +3,27 @@
 // =============================================
 
 export interface User {
-  user_id: number;
+  id: string;
   email: string;
   user_name: string;
-  phone_number: string;
+  phone_number?: string | null;
   role_id: 1 | 2 | 3; // SYSTEM_ADMIN | COMPANY_MANAGER | TEAM_MEMBER
+  role_name?: string;
   status_id: 1 | 2 | 3; // ACTIVE | INACTIVE | PENDING
-  company_id?: number;
-  company?: Company;
-  role?: Role;
-  status?: Status;
+  status_name?: string;
+  company_id?: string | null;
+  company?: Company | null;
   created_at?: string;
   updated_at?: string;
 }
 
 export interface Company {
-  company_id: number;
+  id: string;
   company_name: string;
-  company_description?: string;
-  manager_id: number;
-  invitation_code: string;
-  is_approved: boolean;
-  approved_at?: string;
-  approved_by?: number;
+  company_description?: string | null;
+  manager_id?: string | null;
+  invitation_code?: string | null;
+  status_id?: number;
   created_at?: string;
   updated_at?: string;
 }
@@ -105,12 +103,12 @@ export interface PasswordResetResponseDto {
 
 // 승인 DTO
 export interface ApproveCompanyDto {
-  company_id: number;
+  company_id: string;
   is_approved: boolean;
 }
 
 export interface ApproveMemberDto {
-  user_id: number;
+  user_id: string;
   is_approved: boolean;
 }
 

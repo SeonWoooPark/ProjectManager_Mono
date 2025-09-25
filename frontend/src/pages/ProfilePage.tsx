@@ -2,6 +2,8 @@ import { useAuthStore } from '@store/authStore';
 
 export default function ProfilePage() {
   const { user } = useAuthStore();
+  const roleLabel = user?.role_name ?? 'User';
+  const joinedAt = user?.created_at ? user.created_at.toString().slice(0, 10) : '정보 없음';
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -19,7 +21,7 @@ export default function ProfilePage() {
               <h2 className="text-xl font-semibold">{user?.user_name}</h2>
               <p className="text-gray-600">{user?.email}</p>
               <span className="inline-block mt-2 px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm">
-                {user?.role?.role_name || 'User'}
+                {roleLabel}
               </span>
             </div>
           </div>
@@ -37,11 +39,11 @@ export default function ProfilePage() {
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500">역할</dt>
-                <dd className="mt-1 text-sm text-gray-900">{user?.role?.role_name || 'User'}</dd>
+                <dd className="mt-1 text-sm text-gray-900">{roleLabel}</dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500">가입일</dt>
-                <dd className="mt-1 text-sm text-gray-900">2024-01-01</dd>
+                <dd className="mt-1 text-sm text-gray-900">{joinedAt}</dd>
               </div>
             </dl>
           </div>

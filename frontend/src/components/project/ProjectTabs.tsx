@@ -1,53 +1,51 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@components/ui/tabs"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card"
-import { Badge } from "@components/ui/badge"
-import { Avatar, AvatarFallback } from "@components/ui/avatar"
-import { ReadOnlyKanbanBoard } from "@components/dashboard/read-only-kanban-board"
-import {
-  CheckSquare, Users, Activity,
-  LayoutGrid
-} from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@components/ui/card';
+import { Badge } from '@components/ui/badge';
+import { Avatar, AvatarFallback } from '@components/ui/avatar';
+import { ReadOnlyKanbanBoard } from '@components/dashboard/read-only-kanban-board';
+import { CheckSquare, Users, Activity, LayoutGrid } from 'lucide-react';
+import { taskStatusBadgeClass, taskStatusLabel, TaskStatusKey } from '@/utils/status';
 
-interface Task {
-  id: string
-  title: string
-  status: string
-  priority: string
-  assignee: string
-  dueDate: string
-  isMyTask?: boolean
+interface ProjectTabTask {
+  id: string;
+  title: string;
+  statusKey: TaskStatusKey;
+  priority: '높음' | '중간' | '낮음';
+  assignee: string;
+  dueDate: string;
+  isMyTask: boolean;
 }
 
 interface TeamMember {
-  id: number
-  name: string
-  role: string
-  status: string
+  id: string;
+  name: string;
+  role: string;
+  status: string;
 }
 
-interface Activity {
-  id: number
-  user: string
-  action: string
-  target: string
-  time: string
+interface ProjectActivity {
+  id: number;
+  user: string;
+  action: string;
+  target: string;
+  time: string;
 }
 
 interface KanbanTasks {
-  todo: { id: string; title: string; assignee: string; isMyTask: boolean }[]
-  inProgress: { id: string; title: string; assignee: string; isMyTask: boolean }[]
-  review: { id: string; title: string; assignee: string; isMyTask: boolean }[]
-  completed: { id: string; title: string; assignee: string; isMyTask: boolean }[]
-  cancelled: { id: string; title: string; assignee: string; isMyTask: boolean }[]
+  todo: { id: string; title: string; assignee: string; isMyTask: boolean }[];
+  inProgress: { id: string; title: string; assignee: string; isMyTask: boolean }[];
+  review: { id: string; title: string; assignee: string; isMyTask: boolean }[];
+  completed: { id: string; title: string; assignee: string; isMyTask: boolean }[];
+  cancelled: { id: string; title: string; assignee: string; isMyTask: boolean }[];
 }
 
 interface ProjectTabsProps {
-  tasks: Task[]
-  team: TeamMember[]
-  activities: Activity[]
-  kanbanTasks: KanbanTasks
-  manager: string
-  currentUser: string
+  tasks: ProjectTabTask[];
+  team: TeamMember[];
+  activities: ProjectActivity[];
+  kanbanTasks: KanbanTasks;
+  manager: string;
+  currentUser: string;
 }
 
 export function ProjectTabs({
@@ -56,26 +54,8 @@ export function ProjectTabs({
   activities,
   kanbanTasks,
   manager,
-  currentUser
+  currentUser,
 }: ProjectTabsProps) {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "완료": return "bg-green-100 text-green-800"
-      case "진행 중": return "bg-blue-100 text-blue-800"
-      case "할 일": return "bg-gray-100 text-gray-800"
-      default: return "bg-gray-100 text-gray-800"
-    }
-  }
-
-  const getPriorityColor = (priority: string): "destructive" | "default" | "secondary" => {
-    switch (priority) {
-      case "높음": return "destructive"
-      case "중간": return "default"
-      case "낮음": return "secondary"
-      default: return "secondary"
-    }
-  }
-
   return (
     <Tabs defaultValue="kanban" className="space-y-4">
       <TabsList className="bg-white text-black">
@@ -95,7 +75,6 @@ export function ProjectTabs({
           <Activity className="h-4 w-4" />
           활동 내역
         </TabsTrigger>
-
       </TabsList>
 
       <TabsContent value="kanban">
@@ -116,10 +95,10 @@ export function ProjectTabs({
                     <div className="flex-1">
                       <h4 className="font-medium text-foreground">{task.title}</h4>
                       <div className="flex items-center gap-3 mt-1">
-                        <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(task.status)}`}>
-                          {task.status}
+                        <span className={`text-xs px-2 py-1 rounded-full ${taskStatusBadgeClass(task.statusKey)}`}>
+                          {taskStatusLabel(task.statusKey)}
                         </span>
-                        <Badge variant={getPriorityColor(task.priority)} className="text-xs">
+                        <Badge variant={task.priority === '높음' ? 'destructive' : task.priority === '중간' ? 'default' : 'secondary'} className="text-xs">
                           {task.priority}
                         </Badge>
                         <span className="text-xs text-muted-foreground">담당: {task.assignee}</span>
@@ -127,11 +106,16 @@ export function ProjectTabs({
                       </div>
                     </div>
                     {task.assignee === currentUser && (
-                      <Badge variant="outline" className="ml-4">내 작업</Badge>
+                      <Badge variant="outline" className="ml-4">
+                        내 작업
+                      </Badge>
                     )}
                   </div>
                 </div>
               ))}
+              {tasks.length === 0 && (
+                <div className="text-center text-muted-foreground py-10">등록된 작업이 없습니다.</div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -175,6 +159,9 @@ export function ProjectTabs({
                   </div>
                 </div>
               ))}
+              {team.length === 0 && (
+                <div className="text-center text-muted-foreground py-6">등록된 팀원이 없습니다.</div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -197,7 +184,7 @@ export function ProjectTabs({
                   </Avatar>
                   <div className="flex-1">
                     <p className="text-sm">
-                      <span className="font-medium">{activity.user}</span>님이{" "}
+                      <span className="font-medium">{activity.user}</span>님이{' '}
                       <span className="text-muted-foreground">{activity.action}</span>
                     </p>
                     <p className="text-sm font-medium mt-1">{activity.target}</p>
@@ -205,12 +192,13 @@ export function ProjectTabs({
                   </div>
                 </div>
               ))}
+              {activities.length === 0 && (
+                <div className="text-center text-muted-foreground py-6">최근 활동이 없습니다.</div>
+              )}
             </div>
           </CardContent>
         </Card>
       </TabsContent>
-
-
     </Tabs>
-  )
+  );
 }
