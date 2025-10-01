@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
 import { authService } from './authService';
 import { useAuthStore } from '@/store/authStore';
+import { membersQueryKeys } from '@/services/members/membersQueries';
+
 import type {
   LoginRequestDto,
   CompanyManagerSignupDto,
@@ -277,8 +279,8 @@ export const useApproveCompany = () => {
     mutationFn: (data: ApproveCompanyDto) => authService.approveCompany(data),
     onSuccess: (_, variables) => {
       // 관련 쿼리 무효화
-      queryClient.invalidateQueries({ queryKey: ['pending-companies'] });
-      queryClient.invalidateQueries({ queryKey: ['companies'] });
+      queryClient.invalidateQueries({ queryKey: membersQueryKeys.pending() });
+      queryClient.invalidateQueries({ queryKey: membersQueryKeys.list() });
 
       toast({
         title: variables.is_approved ? '승인 완료' : '거부 완료',
@@ -306,12 +308,13 @@ export const useApproveMember = () => {
     mutationFn: (data: ApproveMemberDto) => authService.approveMember(data),
     onSuccess: (_, variables) => {
       // 관련 쿼리 무효화
-      queryClient.invalidateQueries({ queryKey: ['pending-members'] });
-      queryClient.invalidateQueries({ queryKey: ['team-members'] });
+      queryClient.invalidateQueries({ queryKey: membersQueryKeys.pending() });
+      queryClient.invalidateQueries({ queryKey: membersQueryKeys.list() });
 
+      const isApproved = variables.action === 'approve';
       toast({
-        title: variables.is_approved ? '승인 완료' : '거부 완료',
-        description: `팀원 ${variables.is_approved ? '승인' : '거부'} 처리가 완료되었습니다.`,
+        title: isApproved ? '승인 완료' : '거부 완료',
+        description: `팀원 ${isApproved ? '승인' : '거부'} 처리가 완료되었습니다.`,
       });
     },
     onError: (error: any) => {

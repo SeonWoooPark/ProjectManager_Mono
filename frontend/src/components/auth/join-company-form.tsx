@@ -62,7 +62,7 @@ export function JoinCompanyForm() {
   const invitationCode = form.watch('invitation_code')
   useEffect(() => {
     if (invitationCode && invitationCode.length >= 6) {
-      validateCodeMutation.mutate(invitationCode)
+      // validateCodeMutation.mutate(invitationCode)
     }
   }, [invitationCode])
 

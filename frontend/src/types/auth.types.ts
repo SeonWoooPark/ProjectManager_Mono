@@ -109,7 +109,8 @@ export interface ApproveCompanyDto {
 
 export interface ApproveMemberDto {
   user_id: string;
-  is_approved: boolean;
+  action: 'approve' | 'reject';
+  comment?: string;
 }
 
 export interface ApprovalResponseDto {

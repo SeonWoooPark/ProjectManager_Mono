@@ -22,6 +22,7 @@ import { JoinRequestsCard } from './join-requests-card';
 import { Search, MoreHorizontal, UserPlus, Settings } from 'lucide-react';
 import LoadingSpinner from '@components/atoms/LoadingSpinner';
 import { useCompanyMembers, usePendingMembers } from '@/services/members/membersQueries';
+import { useApproveMember } from '@/services/auth/authMutations';
 import type { MemberSummary } from '@/types/members.types';
 
 interface DialogMember {
@@ -106,6 +107,8 @@ export function TeamManagementInterface() {
     isError: pendingError,
   } = usePendingMembers();
 
+  const approveMemberMutation = useApproveMember();
+
   const teamMembers: MemberSummary[] = membersData?.members ?? [];
 
   const roleOptions = useMemo(() => {
@@ -144,11 +147,17 @@ export function TeamManagementInterface() {
   };
 
   const handleApproveRequest = (requestId: string) => {
-    console.log('Approving join request:', requestId);
+    approveMemberMutation.mutate({
+      user_id: requestId,
+      action: 'approve',
+    });
   };
 
   const handleRejectRequest = (requestId: string) => {
-    console.log('Rejecting join request:', requestId);
+    approveMemberMutation.mutate({
+      user_id: requestId,
+      action: 'reject',
+    });
   };
 
   const handleCreateRole = () => {
