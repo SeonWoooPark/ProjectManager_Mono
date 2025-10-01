@@ -15,6 +15,7 @@ import type { TaskStatusKey } from '@/utils/status';
 import type { ProjectSummary } from '@/types/projects.types';
 import { formatDistanceToNowStrict, parseISO } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { useApproveMember } from '@/services/auth/authMutations';
 
 type StatChange = 'increase' | 'decrease' | 'neutral';
 
@@ -118,6 +119,8 @@ const buildProjectStats = (projects: ProjectSummary[], memberCount: number, comp
 };
 
 export function CompanyAdminDashboard() {
+  const approveMemberMutation = useApproveMember();
+
   const {
     data: projectsData,
     isLoading: projectsLoading,
@@ -234,11 +237,11 @@ export function CompanyAdminDashboard() {
   }, [pendingMembersData?.pending_members]);
 
   const handleApproveRequest = (requestId: string) => {
-    console.log(`Approving join request: ${requestId}`);
+    approveMemberMutation.mutate({ user_id: requestId, action: 'approve' });
   };
 
   const handleRejectRequest = (requestId: string) => {
-    console.log(`Rejecting join request: ${requestId}`);
+    approveMemberMutation.mutate({ user_id: requestId, action: 'reject' });
   };
 
   if (projectsLoading || membersLoading || pendingLoading || activitiesLoading) {
