@@ -9,7 +9,7 @@ import LoadingSpinner from '@components/atoms/LoadingSpinner';
 import { useProjects } from '@/services/projects/projectsQueries';
 import { useAssignedTasks } from '@/services/tasks/tasksQueries';
 import { useAuthStore } from '@/store/authStore';
-import { projectStatusBadgeVariant, projectStatusLabel, toTaskStatusKey } from '@/utils/status';
+import { projectStatusBadgeClass, projectStatusLabel, toTaskStatusKey } from '@/utils/status';
 import type { TaskSummary } from '@/types/tasks.types';
 import type { TaskStatusKey } from '@/utils/status';
 
@@ -19,7 +19,7 @@ interface MemberProjectCardData {
   description: string;
   progress: number;
   status: string;
-  badgeVariant: 'default' | 'secondary' | 'outline';
+  badgeClass: string;
   startDate: string;
   endDate: string;
   role: string;
@@ -80,7 +80,7 @@ export function MemberProjectsView() {
           description: project.project_description || '프로젝트 설명이 없습니다.',
           progress: Math.round(project.progress_rate ?? 0),
           status: projectStatusLabel(project.status_name),
-          badgeVariant: projectStatusBadgeVariant(project.status_name),
+          badgeClass: projectStatusBadgeClass(project.status_name),
           startDate: project.start_date,
           endDate: project.end_date,
           role: '팀원',
@@ -141,7 +141,7 @@ export function MemberProjectsView() {
                     <CardDescription>{project.description}</CardDescription>
                   </div>
                   <div className="text-right">
-                    <Badge variant={project.badgeVariant}>{project.status}</Badge>
+                    <Badge className={project.badgeClass}>{project.status}</Badge>
                     <p className="text-sm text-muted-foreground mt-1">역할: {project.role}</p>
                   </div>
                 </div>

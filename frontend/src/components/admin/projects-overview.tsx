@@ -7,7 +7,7 @@ import { Eye, Users, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import LoadingSpinner from '@components/atoms/LoadingSpinner';
 import { useProjects } from '@/services/projects/projectsQueries';
-import { projectStatusBadgeVariant, projectStatusLabel } from '@/utils/status';
+import { projectStatusBadgeClass, projectStatusLabel } from '@/utils/status';
 
 export function ProjectsOverview() {
   const {
@@ -59,7 +59,7 @@ export function ProjectsOverview() {
         {projects.map((project) => {
           const progressRate = Math.round(project.progress_rate ?? 0);
           const statusLabel = projectStatusLabel(project.status_name);
-          const badgeVariant = projectStatusBadgeVariant(project.status_name);
+          const badgeClass = projectStatusBadgeClass(project.status_name);
           const teamCount = totalMembersByProject.get(project.id) ?? 0;
 
           return (
@@ -70,7 +70,7 @@ export function ProjectsOverview() {
                     <CardTitle className="text-xl">{project.project_name}</CardTitle>
                     <CardDescription>{project.project_description || '프로젝트 설명이 없습니다.'}</CardDescription>
                   </div>
-                  <Badge variant={badgeVariant}>{statusLabel}</Badge>
+                  <Badge className={badgeClass}>{statusLabel}</Badge>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">

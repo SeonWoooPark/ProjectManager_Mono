@@ -10,7 +10,7 @@ import LoadingSpinner from '@components/atoms/LoadingSpinner';
 import { useProjects, projectsQueryKeys } from '@/services/projects/projectsQueries';
 import { projectsService } from '@/services/projects/projectsService';
 import { useCompanyMembers, usePendingMembers } from '@/services/members/membersQueries';
-import { projectStatusBadgeVariant, projectStatusLabel, taskStatusLabel, toTaskStatusKey } from '@/utils/status';
+import { projectStatusBadgeClass, projectStatusLabel, taskStatusLabel, toTaskStatusKey } from '@/utils/status';
 import type { TaskStatusKey } from '@/utils/status';
 import type { ProjectSummary } from '@/types/projects.types';
 import { formatDistanceToNowStrict, parseISO } from 'date-fns';
@@ -33,7 +33,7 @@ interface ProjectCardData {
   description: string;
   progress: number;
   statusLabel: string;
-  badgeVariant: 'default' | 'secondary' | 'outline';
+  badgeClass: string;
   startDate: string;
   endDate: string;
   teamCount: number;
@@ -147,7 +147,7 @@ export function CompanyAdminDashboard() {
       description: project.project_description || '프로젝트 설명이 없습니다.',
       progress: Math.round(project.progress_rate ?? 0),
       statusLabel: projectStatusLabel(project.status_name),
-      badgeVariant: projectStatusBadgeVariant(project.status_name),
+      badgeClass: projectStatusBadgeClass(project.status_name),
       startDate: project.start_date,
       endDate: project.end_date,
       teamCount: project.allocated_members.length,
@@ -323,7 +323,7 @@ export function CompanyAdminDashboard() {
                       <h3 className="font-semibold text-foreground">{project.name}</h3>
                       <p className="text-sm text-muted-foreground">{project.description}</p>
                     </div>
-                    <Badge variant={project.badgeVariant}>{project.statusLabel}</Badge>
+                    <Badge className={project.badgeClass}>{project.statusLabel}</Badge>
                   </div>
 
                   <div className="space-y-2">

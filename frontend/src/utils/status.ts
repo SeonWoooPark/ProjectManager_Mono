@@ -19,12 +19,12 @@ const TASK_STATUS_COLOR_CLASSES: Record<TaskStatusKey, string> = {
 const TASK_STATUS_NAME_TO_KEY: Record<string, TaskStatusKey> = {
   TODO: 'todo',
   'TO DO': 'todo',
-  'IN_PROGRESS': 'inProgress',
+  IN_PROGRESS: 'inProgress',
   'IN PROGRESS': 'inProgress',
   'IN-PROGRESS': 'inProgress',
   INPROGRESS: 'inProgress',
   REVIEW: 'review',
-  'IN_REVIEW': 'review',
+  IN_REVIEW: 'review',
   'IN REVIEW': 'review',
   'IN-REVIEW': 'review',
   COMPLETED: 'completed',
@@ -49,12 +49,11 @@ export function taskStatusBadgeClass(status: TaskStatusKey): string {
 }
 
 const PROJECT_STATUS_LABELS: Record<string, string> = {
-  PLANNING: '계획 중',
   IN_PROGRESS: '진행 중',
   COMPLETED: '완료',
   ON_HOLD: '보류',
   CANCELLED: '취소',
-  ARCHIVED: '보관됨',
+  NOT_STARTED: '시작 전',
 };
 
 export function projectStatusLabel(statusName: string | null | undefined): string {
@@ -63,19 +62,25 @@ export function projectStatusLabel(statusName: string | null | undefined): strin
   return PROJECT_STATUS_LABELS[normalized] || statusName;
 }
 
-export function projectStatusBadgeVariant(statusName: string | null | undefined): 'default' | 'secondary' | 'outline' {
+export function projectStatusBadgeClass(statusName: string | null | undefined): string {
   const normalized = statusName?.trim().toUpperCase();
   switch (normalized) {
     case 'IN_PROGRESS':
-    case 'PLANNING':
-      return 'default';
+      return 'bg-black text-white border-black'; // 진행 중: 검정 바탕 흰 글씨
+
     case 'COMPLETED':
-      return 'default';
-    case 'CANCELLED':
+      return 'bg-sky-200 text-sky-900 border-sky-200'; // 파스텔 스카이 (추가 상태 예시)
+
     case 'ON_HOLD':
-      return 'secondary';
+      return 'bg-emerald-200 text-emerald-900 border-emerald-200'; // 민트빛 파스텔
+
+    case 'NOT_STARTED':
+      return 'bg-slate-200 text-slate-800 border-slate-200'; // 파스텔 그레이
+
+    case 'CANCELLED':
+      return 'bg-rose-200 text-rose-900 border-rose-200'; // 파스텔 핑크
     default:
-      return 'secondary';
+      return 'bg-gray-400 text-white border-gray-400'; // 파스텔 그레이
   }
 }
 
@@ -86,7 +91,10 @@ export function countTasksByStatus(tasks: Array<{ status_name: string | null | u
       acc[key] += 1;
       return acc;
     },
-    { todo: 0, inProgress: 0, review: 0, completed: 0, cancelled: 0 } as Record<TaskStatusKey, number>
+    { todo: 0, inProgress: 0, review: 0, completed: 0, cancelled: 0 } as Record<
+      TaskStatusKey,
+      number
+    >
   );
 }
 
