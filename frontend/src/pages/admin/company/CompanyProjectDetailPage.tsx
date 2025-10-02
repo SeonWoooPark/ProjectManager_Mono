@@ -3,7 +3,7 @@ import { UnifiedProjectDetailView } from "@components/project/UnifiedProjectDeta
 
 export default function CompanyProjectDetailPage() {
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-background overflow-hidden">
       <CompanyAdminSidebar />
       <main className="flex-1 overflow-y-auto">
         <div className="py-6 pl-6 pr-6 max-w-9xl mx-auto">
