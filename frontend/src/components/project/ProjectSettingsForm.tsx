@@ -34,10 +34,10 @@ interface ProjectSettingsFormProps {
 
 const PROJECT_STATUS_OPTIONS = [
   { value: 1, label: '시작 전', color: 'text-gray-500' },
-  { value: 2, label: '진행 중', color: 'text-blue-500' },
-  { value: 3, label: '완료', color: 'text-green-500' },
-  { value: 4, label: '보류', color: 'text-yellow-500' },
-  { value: 5, label: '취소', color: 'text-red-500' },
+  { value: 2, label: '진행 중', color: 'text-gray-500' },
+  { value: 3, label: '완료', color: 'text-gray-500' },
+  { value: 4, label: '보류', color: 'text-gray-500' },
+  { value: 5, label: '취소', color: 'text-gray-500' },
 ];
 
 export function ProjectSettingsForm({ project, currentMembers }: ProjectSettingsFormProps) {
