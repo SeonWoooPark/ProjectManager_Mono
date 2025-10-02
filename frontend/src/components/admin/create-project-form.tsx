@@ -37,7 +37,7 @@ export function CreateProjectForm() {
     data: membersData,
     isLoading: membersLoading,
     isError: membersError,
-  } = useCompanyMembers();
+  } = useCompanyMembers({ status_id: 1 }); // ACTIVE만
 
   const availableMembers = useMemo(() => membersData?.members ?? [], [membersData?.members]);
 
@@ -115,7 +115,9 @@ export function CreateProjectForm() {
         <Label>팀원 선택</Label>
         <div className="border rounded-lg p-4 space-y-3 max-h-48 overflow-y-auto">
           {availableMembers.length === 0 ? (
-            <p className="text-sm text-muted-foreground">등록된 팀원이 없습니다. 먼저 팀원을 초대하세요.</p>
+            <p className="text-sm text-muted-foreground">
+              등록된 팀원이 없습니다. 먼저 팀원을 초대하세요.
+            </p>
           ) : (
             availableMembers.map((member) => (
               <div key={member.id} className="flex items-center space-x-3">
@@ -136,7 +138,9 @@ export function CreateProjectForm() {
             ))
           )}
         </div>
-        <p className="text-sm text-muted-foreground">선택된 팀원: {formData.selectedMembers.length}명</p>
+        <p className="text-sm text-muted-foreground">
+          선택된 팀원: {formData.selectedMembers.length}명
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -166,7 +170,12 @@ export function CreateProjectForm() {
         <Button type="submit" disabled={mutation.isPending} className="flex-1">
           {mutation.isPending ? '생성 중...' : '프로젝트 생성'}
         </Button>
-        <Button type="button" variant="outline" onClick={() => navigate(-1)} className="bg-transparent">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => navigate(-1)}
+          className="bg-transparent"
+        >
           취소
         </Button>
       </div>
