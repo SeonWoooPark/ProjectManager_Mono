@@ -3,7 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@comp
 import { Badge } from '@components/ui/badge';
 import { Avatar, AvatarFallback } from '@components/ui/avatar';
 import { ReadOnlyKanbanBoard } from '@components/dashboard/read-only-kanban-board';
-import { CheckSquare, Users, Activity, LayoutGrid } from 'lucide-react';
+import { ProjectSettingsForm } from './ProjectSettingsForm';
+import { CheckSquare, Users, Activity, LayoutGrid, Settings } from 'lucide-react';
 import { taskStatusBadgeClass, taskStatusLabel, TaskStatusKey } from '@/utils/status';
 
 interface ProjectTabTask {
@@ -46,6 +47,9 @@ interface ProjectTabsProps {
   kanbanTasks: KanbanTasks;
   manager: string;
   currentUser: string;
+  userRole?: 'TEAM_MEMBER' | 'COMPANY_MANAGER';
+  project?: any;
+  projectMembers?: any[];
 }
 
 export function ProjectTabs({
@@ -55,6 +59,9 @@ export function ProjectTabs({
   kanbanTasks,
   manager,
   currentUser,
+  userRole = 'TEAM_MEMBER',
+  project,
+  projectMembers = [],
 }: ProjectTabsProps) {
   return (
     <Tabs defaultValue="kanban" className="space-y-4">
@@ -75,6 +82,12 @@ export function ProjectTabs({
           <Activity className="h-4 w-4" />
           활동 내역
         </TabsTrigger>
+        {userRole === 'COMPANY_MANAGER' && (
+          <TabsTrigger value="settings" className="gap-2 data-[state=active]:bg-black data-[state=active]:text-white">
+            <Settings className="h-4 w-4" />
+            설정
+          </TabsTrigger>
+        )}
       </TabsList>
 
       <TabsContent value="kanban">
@@ -199,6 +212,14 @@ export function ProjectTabs({
           </CardContent>
         </Card>
       </TabsContent>
+
+      {userRole === 'COMPANY_MANAGER' && project && (
+        <TabsContent value="settings">
+          <div className="pb-3">
+            <ProjectSettingsForm project={project} currentMembers={projectMembers} />
+          </div>
+        </TabsContent>
+      )}
     </Tabs>
   );
 }

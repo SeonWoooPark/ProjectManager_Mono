@@ -53,4 +53,23 @@ export const projectsService = {
     });
     return response.data.data;
   },
+
+  async updateProject(
+    projectId: string,
+    payload: {
+      project_name?: string;
+      project_description?: string;
+      end_date?: string;
+      status_id?: number;
+      progress_rate?: number;
+      member_ids_to_add?: string[];
+      member_ids_to_remove?: string[];
+    }
+  ) {
+    const response = await api.patch<SuccessResponse<ProjectDetail>>(
+      `/projects/${projectId}`,
+      payload
+    );
+    return response.data.data;
+  },
 };

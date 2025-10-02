@@ -5,9 +5,18 @@ import { ProjectTabs } from './ProjectTabs';
 import { AlertCircle } from 'lucide-react';
 import { Button } from '@components/ui/button';
 import LoadingSpinner from '@components/atoms/LoadingSpinner';
-import { useProjectDetail, useProjectMembers, useProjectTasks } from '@/services/projects/projectsQueries';
+import {
+  useProjectDetail,
+  useProjectMembers,
+  useProjectTasks,
+} from '@/services/projects/projectsQueries';
 import { useAuthStore } from '@/store/authStore';
-import { projectStatusLabel, taskStatusLabel, toTaskStatusKey, TaskStatusKey } from '@/utils/status';
+import {
+  projectStatusLabel,
+  taskStatusLabel,
+  toTaskStatusKey,
+  TaskStatusKey,
+} from '@/utils/status';
 import type { ProjectTaskSummary } from '@/types/projects.types';
 import { formatDistanceToNowStrict, parseISO } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -28,17 +37,24 @@ const statusLabelMap: Record<string, string> = {
   PENDING: '승인 대기',
 };
 
-const derivePriority = (task: ProjectTaskSummary, statusKey: TaskStatusKey): '높음' | '중간' | '낮음' => {
+const derivePriority = (
+  task: ProjectTaskSummary,
+  statusKey: TaskStatusKey
+): '높음' | '중간' | '낮음' => {
   if (statusKey === 'completed') return '낮음';
   if (task.end_date) {
-    const daysRemaining = Math.ceil((new Date(task.end_date).getTime() - Date.now()) / (1000 * 3600 * 24));
+    const daysRemaining = Math.ceil(
+      (new Date(task.end_date).getTime() - Date.now()) / (1000 * 3600 * 24)
+    );
     if (daysRemaining <= 2) return '높음';
     if (daysRemaining <= 5) return '중간';
   }
   return '중간';
 };
 
-export function UnifiedProjectDetailView({ userRole = 'TEAM_MEMBER' }: UnifiedProjectDetailViewProps) {
+export function UnifiedProjectDetailView({
+  userRole = 'TEAM_MEMBER',
+}: UnifiedProjectDetailViewProps) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
@@ -65,7 +81,8 @@ export function UnifiedProjectDetailView({ userRole = 'TEAM_MEMBER' }: UnifiedPr
   const isLoading = isProjectLoading || isTasksLoading || isMembersLoading;
   const hasError = isProjectError || isTasksError || isMembersError || !project;
 
-  const returnPath = userRole === 'COMPANY_MANAGER' ? '/admin/company/projects' : '/dashboard/member/projects';
+  const returnPath =
+    userRole === 'COMPANY_MANAGER' ? '/admin/company/projects' : '/dashboard/member/projects';
 
   if (!id) {
     return (
@@ -87,7 +104,9 @@ export function UnifiedProjectDetailView({ userRole = 'TEAM_MEMBER' }: UnifiedPr
       <div className="flex flex-col items-center justify-center h-96">
         <AlertCircle className="h-16 w-16 text-muted-foreground mb-4" />
         <h2 className="text-xl font-semibold mb-2">프로젝트를 찾을 수 없습니다</h2>
-        <p className="text-muted-foreground mb-4">요청하신 프로젝트가 존재하지 않거나 접근 권한이 없습니다.</p>
+        <p className="text-muted-foreground mb-4">
+          요청하신 프로젝트가 존재하지 않거나 접근 권한이 없습니다.
+        </p>
         <Button onClick={() => navigate(returnPath)}>프로젝트 목록으로 돌아가기</Button>
       </div>
     );
@@ -96,7 +115,8 @@ export function UnifiedProjectDetailView({ userRole = 'TEAM_MEMBER' }: UnifiedPr
   const tasks = projectTasksData?.tasks ?? [];
   const projectMembers = projectMembersData?.members ?? [];
 
-  const manager = projectMembers.find((member) => member.role_name?.includes('MANAGER'))?.user_name || '미지정';
+  const manager =
+    projectMembers.find((member) => member.role_name?.includes('MANAGER'))?.user_name || '미지정';
 
   const myTasks = tasks.filter((task) => task.assignee_id === currentUserId);
   const myTaskCounts = myTasks.reduce(
@@ -126,8 +146,22 @@ export function UnifiedProjectDetailView({ userRole = 'TEAM_MEMBER' }: UnifiedPr
   const kanbanTasks = tabTasks.reduce(
     (acc, task) => {
       const key = task.statusKey;
-      const columnKey = key === 'inProgress' ? 'inProgress' : key === 'review' ? 'review' : key === 'completed' ? 'completed' : key === 'cancelled' ? 'cancelled' : 'todo';
-      acc[columnKey].push({ id: task.id, title: task.title, assignee: task.assignee, isMyTask: task.isMyTask });
+      const columnKey =
+        key === 'inProgress'
+          ? 'inProgress'
+          : key === 'review'
+          ? 'review'
+          : key === 'completed'
+          ? 'completed'
+          : key === 'cancelled'
+          ? 'cancelled'
+          : 'todo';
+      acc[columnKey].push({
+        id: task.id,
+        title: task.title,
+        assignee: task.assignee,
+        isMyTask: task.isMyTask,
+      });
       return acc;
     },
     {
@@ -139,16 +173,18 @@ export function UnifiedProjectDetailView({ userRole = 'TEAM_MEMBER' }: UnifiedPr
     }
   );
 
-  const team = projectMembers.map((member) => {
-    const roleKey = member.role_name ?? '';
-    const statusKey = member.status_name ?? '';
-    return {
-      id: member.user_id,
-      name: member.user_name,
-      role: roleLabelMap[roleKey] ?? member.role_name ?? '역할 미지정',
-      status: statusLabelMap[statusKey] ?? member.status_name ?? '상태 미지정',
-    };
-  });
+  const team = projectMembers
+    .filter((member) => !member.role_name?.includes('MANAGER')) // 매니저 제외
+    .map((member) => {
+      const roleKey = member.role_name ?? '';
+      const statusKey = member.status_name ?? '';
+      return {
+        id: member.user_id,
+        name: member.user_name,
+        role: roleLabelMap[roleKey] ?? member.role_name ?? '역할 미지정',
+        status: statusLabelMap[statusKey] ?? member.status_name ?? '상태 미지정',
+      };
+    });
 
   const activities = tasks
     .slice()
@@ -197,6 +233,9 @@ export function UnifiedProjectDetailView({ userRole = 'TEAM_MEMBER' }: UnifiedPr
         kanbanTasks={kanbanTasks}
         manager={manager}
         currentUser={user?.user_name || ''}
+        userRole={userRole}
+        project={project}
+        projectMembers={projectMembers}
       />
     </div>
   );

@@ -12,6 +12,7 @@ import { useCompanyMembers } from '@/services/members/membersQueries';
 import { projectsService } from '@/services/projects/projectsService';
 import { projectsQueryKeys } from '@/services/projects/projectsQueries';
 import { useToast } from '@components/ui/use-toast';
+import { useAuthStore } from '@store/authStore';
 
 interface FormState {
   name: string;
@@ -37,19 +38,27 @@ export function CreateProjectForm() {
     data: membersData,
     isLoading: membersLoading,
     isError: membersError,
-  } = useCompanyMembers({ status_id: 1 }); // ACTIVE만
+  } = useCompanyMembers({ status_id: 1, role_id: 3 }); // ACTIVE한 Team Member만
 
   const availableMembers = useMemo(() => membersData?.members ?? [], [membersData?.members]);
+  const currentUser  = useAuthStore((state) => state.user); // 현재 사용자 정보
 
   const mutation = useMutation({
-    mutationFn: () =>
-      projectsService.createProject({
+    mutationFn: () => {
+      const memberIds = [...formData.selectedMembers];
+
+      // ✅ 회사 관리자 추가 (중복 방지)
+      if (currentUser?.role_id === 2 && !memberIds.includes(currentUser.id)) {
+        memberIds.unshift(currentUser.id);
+      }
+      return projectsService.createProject({
         project_name: formData.name,
         project_description: formData.description,
         start_date: formData.startDate,
         end_date: formData.endDate,
-        member_ids: formData.selectedMembers,
-      }),
+        member_ids: memberIds,
+      });
+    },
     onSuccess: () => {
       toast({ title: '프로젝트가 성공적으로 생성되었습니다.' });
       queryClient.invalidateQueries({ queryKey: projectsQueryKeys.list(undefined) });
