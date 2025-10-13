@@ -7,6 +7,12 @@ import { Input } from '@components/ui/input';
 import { Label } from '@components/ui/label';
 import { Textarea } from '@components/ui/textarea';
 import { Checkbox } from '@components/ui/checkbox';
+import { Calendar } from '@components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@components/ui/popover';
+import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 import LoadingSpinner from '@components/atoms/LoadingSpinner';
 import { useCompanyMembers } from '@/services/members/membersQueries';
 import { projectsService } from '@/services/projects/projectsService';
@@ -17,8 +23,8 @@ import { useAuthStore } from '@store/authStore';
 interface FormState {
   name: string;
   description: string;
-  startDate: string;
-  endDate: string;
+  startDate: Date | undefined;
+  endDate: Date | undefined;
   selectedMembers: string[];
 }
 
@@ -26,10 +32,12 @@ export function CreateProjectForm() {
   const [formData, setFormData] = useState<FormState>({
     name: '',
     description: '',
-    startDate: '',
-    endDate: '',
+    startDate: undefined,
+    endDate: undefined,
     selectedMembers: [],
   });
+  const [startDateOpen, setStartDateOpen] = useState(false);
+  const [endDateOpen, setEndDateOpen] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -54,8 +62,8 @@ export function CreateProjectForm() {
       return projectsService.createProject({
         project_name: formData.name,
         project_description: formData.description,
-        start_date: formData.startDate,
-        end_date: formData.endDate,
+        start_date: formData.startDate ? format(formData.startDate, 'yyyy-MM-dd') : '',
+        end_date: formData.endDate ? format(formData.endDate, 'yyyy-MM-dd') : '',
         member_ids: memberIds,
       });
     },
@@ -153,25 +161,65 @@ export function CreateProjectForm() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="grid gap-2">
-          <Label htmlFor="startDate">시작일</Label>
-          <Input
-            id="startDate"
-            type="date"
-            value={formData.startDate}
-            onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-            required
-          />
+        <div className="space-y-2">
+          <Label>
+            시작일 <span className="text-destructive">*</span>
+          </Label>
+          <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  'w-full justify-start text-left font-normal bg-transparent',
+                  !formData.startDate && 'text-muted-foreground'
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {formData.startDate ? format(formData.startDate, 'PPP', { locale: ko }) : '시작일 선택'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={formData.startDate}
+                onSelect={(date) => {
+                  setFormData({ ...formData, startDate: date });
+                  setStartDateOpen(false);
+                }}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
         </div>
-        <div className="grid gap-2">
-          <Label htmlFor="endDate">종료일</Label>
-          <Input
-            id="endDate"
-            type="date"
-            value={formData.endDate}
-            onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-            required
-          />
+        <div className="space-y-2">
+          <Label>
+            종료일 <span className="text-destructive">*</span>
+          </Label>
+          <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  'w-full justify-start text-left font-normal bg-transparent',
+                  !formData.endDate && 'text-muted-foreground'
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {formData.endDate ? format(formData.endDate, 'PPP', { locale: ko }) : '종료일 선택'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={formData.endDate}
+                onSelect={(date) => {
+                  setFormData({ ...formData, endDate: date });
+                  setEndDateOpen(false);
+                }}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 

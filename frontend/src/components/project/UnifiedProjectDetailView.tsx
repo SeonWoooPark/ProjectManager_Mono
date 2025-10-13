@@ -1,7 +1,9 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { ProjectHeader } from './ProjectHeader';
 import { ProjectInfoCards } from './ProjectInfoCards';
 import { ProjectTabs } from './ProjectTabs';
+import { TaskCreationDialog } from '@components/admin/task-creation-dialog';
 import { AlertCircle } from 'lucide-react';
 import { Button } from '@components/ui/button';
 import LoadingSpinner from '@components/atoms/LoadingSpinner';
@@ -59,6 +61,9 @@ export function UnifiedProjectDetailView({
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const currentUserId = user?.id;
+
+  // 작업 생성 다이얼로그 상태
+  const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
 
   const {
     data: project,
@@ -207,7 +212,7 @@ export function UnifiedProjectDetailView({
         name={project.project_name}
         description={project.project_description || '프로젝트 설명이 없습니다.'}
         status={projectStatusLabel(project.status_name)}
-        onCreateTask={() => console.log('새 작업 만들기 클릭됨')}
+        onCreateTask={() => setIsTaskDialogOpen(true)}
         returnPath={returnPath}
         returnLabel="프로젝트 목록으로 돌아가기"
       />
@@ -236,6 +241,18 @@ export function UnifiedProjectDetailView({
         userRole={userRole}
         project={project}
         projectMembers={projectMembers}
+      />
+
+      {/* 작업 생성 다이얼로그 */}
+      <TaskCreationDialog
+        isOpen={isTaskDialogOpen}
+        onClose={() => setIsTaskDialogOpen(false)}
+        teamMembers={projectMembers.map(member => ({
+          id: member.user_id,
+          name: member.user_name,
+          role: roleLabelMap[member.role_name ?? ''] ?? member.role_name ?? '역할 미지정',
+          avatar: ''
+        }))}
       />
     </div>
   );

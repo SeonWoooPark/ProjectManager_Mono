@@ -13,6 +13,12 @@ import {
   SelectValue,
 } from '@components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@components/ui/card';
+import { Calendar } from '@components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@components/ui/popover';
+import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 import { useToast } from '@components/ui/use-toast';
 import { projectsService } from '@/services/projects/projectsService';
 import { projectsQueryKeys } from '@/services/projects/projectsQueries';
@@ -47,9 +53,13 @@ export function ProjectSettingsForm({ project, currentMembers }: ProjectSettings
   const [formData, setFormData] = useState({
     project_name: project.project_name,
     project_description: project.project_description || '',
-    end_date: project.end_date,
+    start_date: project.start_date ? new Date(project.start_date) : undefined,
+    end_date: project.end_date ? new Date(project.end_date) : undefined,
     status_id: project.status_id || 1,
   });
+
+  const [startDateOpen, setStartDateOpen] = useState(false);
+  const [endDateOpen, setEndDateOpen] = useState(false);
 
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>(
     currentMembers.map((m) => m.id)
@@ -68,7 +78,7 @@ export function ProjectSettingsForm({ project, currentMembers }: ProjectSettings
       return projectsService.updateProject(project.id, {
         project_name: formData.project_name,
         project_description: formData.project_description,
-        end_date: formData.end_date,
+        end_date: formData.end_date ? format(formData.end_date, 'yyyy-MM-dd') : '',
         status_id: formData.status_id,
         member_ids_to_add,
         member_ids_to_remove,
@@ -136,18 +146,63 @@ export function ProjectSettingsForm({ project, currentMembers }: ProjectSettings
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="start_date">시작일 (수정 불가)</Label>
-              <Input id="start_date" type="date" value={project.start_date} disabled />
+              <Label>시작일 (수정 불가)</Label>
+              <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    disabled
+                    className={cn(
+                      'w-full justify-start text-left font-normal bg-transparent',
+                      !formData.start_date && 'text-muted-foreground'
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.start_date ? format(formData.start_date, 'PPP', { locale: ko }) : '시작일 선택'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={formData.start_date}
+                    onSelect={(date) => {
+                      setFormData({ ...formData, start_date: date });
+                      setStartDateOpen(false);
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="end_date">종료일</Label>
-              <Input
-                id="end_date"
-                type="date"
-                value={formData.end_date}
-                onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                required
-              />
+              <Label>
+                종료일 <span className="text-destructive">*</span>
+              </Label>
+              <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      'w-full justify-start text-left font-normal bg-transparent',
+                      !formData.end_date && 'text-muted-foreground'
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.end_date ? format(formData.end_date, 'PPP', { locale: ko }) : '종료일 선택'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={formData.end_date}
+                    onSelect={(date) => {
+                      setFormData({ ...formData, end_date: date });
+                      setEndDateOpen(false);
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 

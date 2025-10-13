@@ -28,28 +28,52 @@ interface TaskCreationDialogProps {
 }
 
 export function TaskCreationDialog({ isOpen, onClose, teamMembers }: TaskCreationDialogProps) {
+  // 백엔드 API 요구사항에 맞춘 formData 구조
   const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    assignee: "",
-    priority: "중간",
-    dueDate: undefined as Date | undefined,
-    tags: "",
+    task_name: "",
+    task_description: "",
+    assignee_id: "",
+    start_date: undefined as Date | undefined,
+    end_date: undefined as Date | undefined,
   })
+
+  // Popover 상태 관리
+  const [startDateOpen, setStartDateOpen] = useState(false)
+  const [endDateOpen, setEndDateOpen] = useState(false)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // In a real app, this would create the task via API
-    console.log("Creating task:", formData)
+
+    // 필수 필드 검증
+    if (!formData.task_name || !formData.assignee_id || !formData.start_date || !formData.end_date) {
+      alert('작업 제목, 담당자, 시작일, 마감일은 필수입니다')
+      return
+    }
+
+    // 날짜 검증 (시작일이 마감일보다 늦으면 안 됨)
+    if (formData.start_date > formData.end_date) {
+      alert('시작일은 마감일보다 늦을 수 없습니다')
+      return
+    }
+
+    // 임시 로그 (API 연동 시 실제 API 호출로 교체 예정)
+    console.log("Creating task:", {
+      task_name: formData.task_name,
+      task_description: formData.task_description || undefined,
+      assignee_id: formData.assignee_id,
+      start_date: formData.start_date.toISOString(),
+      end_date: formData.end_date.toISOString(),
+    })
+
     onClose()
-    // Reset form
+
+    // 폼 초기화
     setFormData({
-      title: "",
-      description: "",
-      assignee: "",
-      priority: "중간",
-      dueDate: undefined,
-      tags: "",
+      task_name: "",
+      task_description: "",
+      assignee_id: "",
+      start_date: undefined,
+      end_date: undefined,
     })
   }
 
@@ -62,102 +86,125 @@ export function TaskCreationDialog({ isOpen, onClose, teamMembers }: TaskCreatio
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* 작업 제목 (필수) */}
           <div className="space-y-2">
-            <Label htmlFor="title">작업 제목</Label>
+            <Label htmlFor="task_name">
+              작업 제목 <span className="text-destructive">*</span>
+            </Label>
             <Input
-              id="title"
-              placeholder="작업 제목을 입력하세요"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              id="task_name"
+              placeholder="작업 제목을 입력하세요 (최대 200자)"
+              value={formData.task_name}
+              onChange={(e) => setFormData({ ...formData, task_name: e.target.value })}
+              maxLength={200}
               required
             />
           </div>
 
+          {/* 작업 설명 (선택) */}
           <div className="space-y-2">
-            <Label htmlFor="description">작업 설명</Label>
+            <Label htmlFor="task_description">작업 설명</Label>
             <Textarea
-              id="description"
-              placeholder="작업에 대한 상세한 설명을 입력하세요"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              id="task_description"
+              placeholder="작업에 대한 상세한 설명을 입력하세요 (최대 2000자)"
+              value={formData.task_description}
+              onChange={(e) => setFormData({ ...formData, task_description: e.target.value })}
+              maxLength={2000}
               rows={3}
             />
           </div>
 
+          {/* 담당자 (필수) */}
+          <div className="space-y-2">
+            <Label>
+              담당자 <span className="text-destructive">*</span>
+            </Label>
+            <Select
+              value={formData.assignee_id}
+              onValueChange={(value) => setFormData({ ...formData, assignee_id: value })}
+              required
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="담당자를 선택하세요" />
+              </SelectTrigger>
+              <SelectContent>
+                {teamMembers.map((member) => (
+                  <SelectItem key={member.id} value={member.id}>
+                    {member.name} ({member.role})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* 시작일 & 마감일 (둘 다 필수) */}
           <div className="grid grid-cols-2 gap-4">
+            {/* 시작일 */}
             <div className="space-y-2">
-              <Label>담당자</Label>
-              <Select
-                value={formData.assignee}
-                onValueChange={(value) => setFormData({ ...formData, assignee: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="담당자 선택" />
-                </SelectTrigger>
-                <SelectContent>
-                  {teamMembers.map((member) => (
-                    <SelectItem key={member.id} value={member.name}>
-                      {member.name} ({member.role})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>
+                시작일 <span className="text-destructive">*</span>
+              </Label>
+              <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal bg-transparent",
+                      !formData.start_date && "text-muted-foreground",
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.start_date ? format(formData.start_date, "PPP", { locale: ko }) : "시작일 선택"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={formData.start_date}
+                    onSelect={(date) => {
+                      setFormData({ ...formData, start_date: date })
+                      setStartDateOpen(false)
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
+            {/* 마감일 */}
             <div className="space-y-2">
-              <Label>우선순위</Label>
-              <Select
-                value={formData.priority}
-                onValueChange={(value) => setFormData({ ...formData, priority: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="높음">높음</SelectItem>
-                  <SelectItem value="중간">중간</SelectItem>
-                  <SelectItem value="낮음">낮음</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>
+                마감일 <span className="text-destructive">*</span>
+              </Label>
+              <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal bg-transparent",
+                      !formData.end_date && "text-muted-foreground",
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.end_date ? format(formData.end_date, "PPP", { locale: ko }) : "마감일 선택"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={formData.end_date}
+                    onSelect={(date) => {
+                      setFormData({ ...formData, end_date: date })
+                      setEndDateOpen(false)
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>마감일</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal bg-transparent",
-                    !formData.dueDate && "text-muted-foreground",
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formData.dueDate ? format(formData.dueDate, "PPP", { locale: ko }) : "마감일을 선택하세요"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={formData.dueDate}
-                  onSelect={(date) => setFormData({ ...formData, dueDate: date })}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="tags">태그</Label>
-            <Input
-              id="tags"
-              placeholder="태그를 쉼표로 구분하여 입력하세요 (예: 개발, API, 테스트)"
-              value={formData.tags}
-              onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-            />
-          </div>
-
+          {/* 버튼 */}
           <div className="flex gap-3 pt-4">
             <Button type="submit" className="flex-1">
               작업 생성
