@@ -31,8 +31,8 @@ export const config = {
     optionsSuccessStatus: 200,
   },
   rateLimit: {
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // limit each IP to 100 requests per windowMs
+    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10), // 기본: 15분 (900000ms)
+    max: parseInt(process.env.RATE_LIMIT_MAX || (process.env.NODE_ENV === 'development' ? '1000' : '100'), 10), // 개발: 1000회, 기타: 100회
   },
   logs: {
     level: process.env.LOG_LEVEL || 'info',

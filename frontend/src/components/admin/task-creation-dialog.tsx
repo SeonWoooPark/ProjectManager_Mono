@@ -35,8 +35,6 @@ export function TaskCreationDialog({ isOpen, onClose, teamMembers, currentUser }
   // 현재 사용자가 일반 팀 멤버인지 확인
   const isTeamMember = currentUser.role === 'TEAM_MEMBER'
 
-  console.log("currentUser", currentUser)
-
   // 백엔드 API 요구사항에 맞춘 formData 구조
   const [formData, setFormData] = useState({
     task_name: "",
