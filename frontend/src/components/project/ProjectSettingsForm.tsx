@@ -63,9 +63,7 @@ export function ProjectSettingsForm({ project, currentMembers }: ProjectSettings
     mutationFn: () => {
       const currentMemberIds = currentMembers.map((m) => m.id);
       const member_ids_to_add = selectedMemberIds.filter((id) => !currentMemberIds.includes(id));
-      const member_ids_to_remove = currentMemberIds.filter(
-        (id) => !selectedMemberIds.includes(id)
-      );
+      const member_ids_to_remove = currentMemberIds.filter((id) => !selectedMemberIds.includes(id));
 
       return projectsService.updateProject(project.id, {
         project_name: formData.project_name,
@@ -76,10 +74,21 @@ export function ProjectSettingsForm({ project, currentMembers }: ProjectSettings
         member_ids_to_remove,
       });
     },
-    onSuccess: () => {
+    onSuccess: (updatedProject) => {
+      // 1. 서버 응답으로 프로젝트 상세 캐시 즉시 업데이트
+      queryClient.setQueryData(projectsQueryKeys.detail(project.id), updatedProject);
+
+      // 2. 멤버 정보는 별도 엔드포인트이므로 refetch 트리거
+      queryClient.invalidateQueries({
+        queryKey: projectsQueryKeys.members(project.id),
+      });
+
+      // 3. 프로젝트 목록 캐시도 갱신 (목록 페이지 동기화)
+      queryClient.invalidateQueries({
+        queryKey: projectsQueryKeys.all,
+      });
+
       toast({ title: '프로젝트가 성공적으로 수정되었습니다.' });
-      queryClient.invalidateQueries({ queryKey: projectsQueryKeys.detail(project.id) });
-      queryClient.invalidateQueries({ queryKey: projectsQueryKeys.members(project.id) });
     },
     onError: () => {
       toast({ title: '프로젝트 수정에 실패했습니다.', variant: 'destructive' });
