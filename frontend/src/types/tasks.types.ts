@@ -28,3 +28,27 @@ export interface AssignedTasksResponse {
   total: number;
   statistics: TaskStatistics;
 }
+
+// 작업 생성 요청 DTO
+export interface CreateTaskDto {
+  task_name: string;
+  task_description?: string;
+  assignee_id: string;
+  start_date: string;  // ISO 8601 형식
+  end_date: string;    // ISO 8601 형식
+}
+
+// 작업 상세 응답 DTO
+export interface TaskDto {
+  id: string;
+  task_name: string;
+  task_description: string | null;
+  project_id: string;
+  assignee_id: string;
+  status_id: number;
+  start_date: string;
+  end_date: string;
+  progress_rate: number;
+  created_at: string;
+  updated_at: string;
+}

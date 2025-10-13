@@ -184,7 +184,7 @@ export function UnifiedProjectDetailView({
       const roleKey = member.role_name ?? '';
       const statusKey = member.status_name ?? '';
       return {
-        id: member.user_id,
+        id: member.id,
         name: member.user_name,
         role: roleLabelMap[roleKey] ?? member.role_name ?? '역할 미지정',
         status: statusLabelMap[statusKey] ?? member.status_name ?? '상태 미지정',
@@ -244,11 +244,12 @@ export function UnifiedProjectDetailView({
       />
 
       {/* 작업 생성 다이얼로그 */}
-      <TaskCreationDialog
+      <TaskCreationDialog 
         isOpen={isTaskDialogOpen}
         onClose={() => setIsTaskDialogOpen(false)}
+        projectId={id}
         teamMembers={projectMembers.map(member => ({
-          id: member.user_id,
+          id: member.id,
           name: member.user_name,
           role: roleLabelMap[member.role_name ?? ''] ?? member.role_name ?? '역할 미지정',
           avatar: ''

@@ -7,6 +7,7 @@ import type {
   ProjectDetail,
 } from '@/types/projects.types';
 import type { SuccessResponse } from '@/types/auth.types';
+import type { CreateTaskDto, TaskDto } from '@/types/tasks.types';
 
 export const projectsService = {
   async listProjects(params?: { page?: number; limit?: number; status_id?: number }) {
@@ -68,6 +69,14 @@ export const projectsService = {
   ) {
     const response = await api.patch<SuccessResponse<ProjectDetail>>(
       `/projects/${projectId}`,
+      payload
+    );
+    return response.data.data;
+  },
+
+  async createTask(projectId: string, payload: CreateTaskDto) {
+    const response = await api.post<SuccessResponse<TaskDto>>(
+      `/projects/${projectId}/tasks`,
       payload
     );
     return response.data.data;

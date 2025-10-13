@@ -427,6 +427,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
       <TaskCreationDialog
         isOpen={isTaskDialogOpen}
         onClose={() => setIsTaskDialogOpen(false)}
+        projectId={projectId}
         teamMembers={projectData.teamMembers}
         currentUser={{
           id: user?.id || '1',

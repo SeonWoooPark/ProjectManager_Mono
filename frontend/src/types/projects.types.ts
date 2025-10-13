@@ -1,5 +1,6 @@
 export interface ProjectMemberSummary {
-  user_id: string;
+  id: string;  // API 실제 응답 필드명
+  user_id?: string;  // 하위 호환성 유지 (deprecated)
   user_name: string;
   email: string;
 }
