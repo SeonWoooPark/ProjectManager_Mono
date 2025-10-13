@@ -10,6 +10,7 @@ import { ProjectSettings } from "./project-settings"
 import { Plus, Calendar, Users, BarChart3, Settings, ArrowLeft } from "lucide-react"
 import { useState } from "react"
 import { Link } from 'react-router-dom'
+import { useAuthStore } from '@/store/authStore'
 
 // Mock project data
 const projectsData = {
@@ -272,6 +273,7 @@ interface ProjectDetailViewProps {
 
 export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false)
+  const user = useAuthStore((state) => state.user)
 
   const projectData = projectsData[projectId as keyof typeof projectsData] || projectsData["1"]
 
@@ -426,6 +428,10 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
         isOpen={isTaskDialogOpen}
         onClose={() => setIsTaskDialogOpen(false)}
         teamMembers={projectData.teamMembers}
+        currentUser={{
+          id: user?.id || '1',
+          role: user?.role_name || 'COMPANY_MANAGER'
+        }}
       />
     </div>
   )

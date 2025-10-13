@@ -25,14 +25,23 @@ interface TaskCreationDialogProps {
   isOpen: boolean
   onClose: () => void
   teamMembers: TeamMember[]
+  currentUser: {
+    id: string
+    role: string
+  }
 }
 
-export function TaskCreationDialog({ isOpen, onClose, teamMembers }: TaskCreationDialogProps) {
+export function TaskCreationDialog({ isOpen, onClose, teamMembers, currentUser }: TaskCreationDialogProps) {
+  // 현재 사용자가 일반 팀 멤버인지 확인
+  const isTeamMember = currentUser.role === 'TEAM_MEMBER'
+
+  console.log("currentUser", currentUser)
+
   // 백엔드 API 요구사항에 맞춘 formData 구조
   const [formData, setFormData] = useState({
     task_name: "",
     task_description: "",
-    assignee_id: "",
+    assignee_id: isTeamMember ? currentUser.id : "", // 팀 멤버는 자신을 기본 담당자로 설정
     start_date: undefined as Date | undefined,
     end_date: undefined as Date | undefined,
   })
@@ -71,7 +80,7 @@ export function TaskCreationDialog({ isOpen, onClose, teamMembers }: TaskCreatio
     setFormData({
       task_name: "",
       task_description: "",
-      assignee_id: "",
+      assignee_id: isTeamMember ? currentUser.id : "", // 팀 멤버는 자신을 기본 담당자로 재설정
       start_date: undefined,
       end_date: undefined,
     })
@@ -119,10 +128,17 @@ export function TaskCreationDialog({ isOpen, onClose, teamMembers }: TaskCreatio
             <Label>
               담당자 <span className="text-destructive">*</span>
             </Label>
+            {isTeamMember && (
+              <p className="text-sm text-muted-foreground">
+                팀 멤버는 본인이 담당자로 자동 지정됩니다
+              </p>
+            )}
+            {!isTeamMember && (
             <Select
               value={formData.assignee_id}
               onValueChange={(value) => setFormData({ ...formData, assignee_id: value })}
               required
+              disabled={isTeamMember}
             >
               <SelectTrigger>
                 <SelectValue placeholder="담당자를 선택하세요" />
@@ -135,6 +151,7 @@ export function TaskCreationDialog({ isOpen, onClose, teamMembers }: TaskCreatio
                 ))}
               </SelectContent>
             </Select>
+            )}
           </div>
 
           {/* 시작일 & 마감일 (둘 다 필수) */}

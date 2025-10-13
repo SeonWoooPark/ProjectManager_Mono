@@ -253,6 +253,10 @@ export function UnifiedProjectDetailView({
           role: roleLabelMap[member.role_name ?? ''] ?? member.role_name ?? '역할 미지정',
           avatar: ''
         }))}
+        currentUser={{
+          id: user?.id || '',
+          role: userRole
+        }}
       />
     </div>
   );
