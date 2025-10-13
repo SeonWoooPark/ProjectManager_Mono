@@ -35,10 +35,16 @@ interface TeamMember {
   avatar: string;
 }
 
+interface Project {
+  id: string;
+  project_name: string;
+}
+
 interface TaskCreationDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  projectId: string;
+  projectId?: string; // optional로 변경
+  projects?: Project[]; // 프로젝트 목록 추가
   teamMembers: TeamMember[];
   currentUser: {
     id: string;
@@ -50,6 +56,7 @@ export function TaskCreationDialog({
   isOpen,
   onClose,
   projectId,
+  projects,
   teamMembers,
   currentUser,
 }: TaskCreationDialogProps) {
@@ -61,12 +68,14 @@ export function TaskCreationDialog({
 
   // 백엔드 API 요구사항에 맞춘 formData 구조
   const [formData, setFormData] = useState<{
+    project_id: string;
     task_name: string;
     task_description: string;
     assignee_id: string | undefined;
     start_date: Date | undefined;
     end_date: Date | undefined;
   }>({
+    project_id: projectId || '', // props의 projectId를 초기값으로
     task_name: '',
     task_description: '',
     assignee_id: isTeamMember ? currentUser.id : undefined, // 팀 멤버는 자신을 기본 담당자로 설정
@@ -83,6 +92,7 @@ export function TaskCreationDialog({
 
     // 필수 필드 검증
     if (
+      !formData.project_id ||
       !formData.task_name ||
       !formData.assignee_id ||
       !formData.start_date ||
@@ -90,7 +100,7 @@ export function TaskCreationDialog({
     ) {
       toast({
         title: '입력 오류',
-        description: '작업 제목, 담당자, 시작일, 마감일은 필수입니다.',
+        description: '프로젝트, 작업 제목, 담당자, 시작일, 마감일은 필수입니다.',
         variant: 'destructive',
       });
       return;
@@ -108,7 +118,7 @@ export function TaskCreationDialog({
 
     try {
       await createTaskMutation.mutateAsync({
-        projectId,
+        projectId: formData.project_id, // 선택된 프로젝트 ID 사용
         data: {
           task_name: formData.task_name,
           task_description: formData.task_description || undefined,
@@ -127,6 +137,7 @@ export function TaskCreationDialog({
 
       // 폼 초기화
       setFormData({
+        project_id: projectId || '',
         task_name: '',
         task_description: '',
         assignee_id: isTeamMember ? currentUser.id : undefined,
@@ -151,6 +162,31 @@ export function TaskCreationDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* 프로젝트 선택 (필수) */}
+          {!projectId && (
+            <div className="space-y-2">
+              <Label>
+                프로젝트 <span className="text-destructive">*</span>
+              </Label>
+              <Select
+                value={formData.project_id}
+                onValueChange={(value) => setFormData({ ...formData, project_id: value })}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="프로젝트를 선택하세요" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects?.map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.project_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {/* 작업 제목 (필수) */}
           <div className="space-y-2">
             <Label htmlFor="task_name">

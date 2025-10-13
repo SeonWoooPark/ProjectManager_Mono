@@ -3,26 +3,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@comp
 import { Button } from '@components/ui/button';
 import { Badge } from '@components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@components/ui/dialog';
-import { Input } from '@components/ui/input';
-import { Label } from '@components/ui/label';
-import { Textarea } from '@components/ui/textarea';
 import { CheckSquare, Clock, AlertCircle, Calendar, Plus } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import LoadingSpinner from '@components/atoms/LoadingSpinner';
 import { useAssignedTasks, tasksQueryKeys } from '@/services/tasks/tasksQueries';
+import { useProjects } from '@/services/projects/projectsQueries';
 import { tasksService } from '@/services/tasks/tasksService';
 import { DEFAULT_TASK_PRIORITY_LABEL, TaskStatusKey, taskStatusBadgeClass, taskStatusLabel, toTaskStatusKey } from '@/utils/status';
 import { useToast } from '@components/ui/use-toast';
+import { TaskCreationDialog } from '@components/admin/task-creation-dialog';
+import { useAuthStore } from '@/store/authStore';
 
 interface MemberTaskCardData {
   id: string;
@@ -62,17 +53,13 @@ export function MemberTasksView() {
   const [statusFilter, setStatusFilter] = useState<TaskStatusKey | 'all'>('all');
   const [projectFilter, setProjectFilter] = useState<string>('all');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [newTask, setNewTask] = useState({
-    title: '',
-    description: '',
-    project: '',
-    dueDate: '',
-  });
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const user = useAuthStore((state) => state.user);
 
   const { data, isLoading, isError } = useAssignedTasks();
+  const { data: projectsData } = useProjects();
 
   const mutation = useMutation({
     mutationFn: async ({ taskId, statusKey }: { taskId: string; statusKey: TaskStatusKey }) => {
@@ -135,14 +122,24 @@ export function MemberTasksView() {
     return statusMatch && projectMatch;
   });
 
+  // 할당된 프로젝트만 필터링 (member-projects-view.tsx와 동일한 방식)
+  const assignedProjects = useMemo(() => {
+    if (!projectsData?.projects || !user?.id) {
+      return [];
+    }
+
+    return projectsData.projects
+      .filter((project) =>
+        project.allocated_members.some((member) => member.user_id === user.id)
+      )
+      .map((project) => ({
+        id: project.id,
+        project_name: project.project_name,
+      }));
+  }, [projectsData?.projects, user?.id]);
+
   const handleStatusChange = (taskId: string, newStatus: TaskStatusKey) => {
     mutation.mutate({ taskId, statusKey: newStatus });
-  };
-
-  const handleCreateTask = () => {
-    console.log('Creating new task:', newTask);
-    setIsCreateDialogOpen(false);
-    setNewTask({ title: '', description: '', project: '', dueDate: '' });
   };
 
   if (isLoading) {
@@ -166,70 +163,9 @@ export function MemberTasksView() {
           <h1 className="text-3xl font-bold text-foreground">내 작업</h1>
           <p className="text-muted-foreground">할당된 모든 작업을 확인하고 상태를 업데이트하세요</p>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />새 작업 만들기
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>새 작업 만들기</DialogTitle>
-              <DialogDescription>새로운 작업을 생성하여 프로젝트에 추가하세요.</DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="title">작업 제목</Label>
-                <Input
-                  id="title"
-                  value={newTask.title}
-                  onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-                  placeholder="작업 제목을 입력하세요"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="description">작업 설명</Label>
-                <Textarea
-                  id="description"
-                  value={newTask.description}
-                  onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                  placeholder="작업에 대한 상세 설명을 입력하세요"
-                />
-              </div>
-              <div className="flex gap-4 justify-between">
-                <div className="flex-1 grid gap-2">
-                  <Label htmlFor="project">프로젝트</Label>
-                  <Select value={newTask.project} onValueChange={(value) => setNewTask({ ...newTask, project: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="프로젝트 선택" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {uniqueProjects.map((project) => (
-                        <SelectItem key={project} value={project}>
-                          {project}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="dueDate">마감일</Label>
-                  <Input
-                    id="dueDate"
-                    type="date"
-                    value={newTask.dueDate}
-                    onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
-                  />
-                </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="submit" onClick={handleCreateTask}>
-                작업 생성
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Button className="flex items-center gap-2" onClick={() => setIsCreateDialogOpen(true)}>
+          <Plus className="h-4 w-4" />새 작업 만들기
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -354,6 +290,25 @@ export function MemberTasksView() {
           </CardContent>
         </Card>
       )}
+
+      {/* 작업 생성 다이얼로그 */}
+      <TaskCreationDialog
+        isOpen={isCreateDialogOpen}
+        onClose={() => setIsCreateDialogOpen(false)}
+        projects={assignedProjects}
+        teamMembers={[
+          {
+            id: user?.id || '',
+            name: user?.user_name || '',
+            role: 'TEAM_MEMBER',
+            avatar: '',
+          },
+        ]}
+        currentUser={{
+          id: user?.id || '',
+          role: 'TEAM_MEMBER',
+        }}
+      />
     </div>
   );
 }
