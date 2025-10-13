@@ -212,6 +212,7 @@ export function UnifiedProjectDetailView({
         name={project.project_name}
         description={project.project_description || '프로젝트 설명이 없습니다.'}
         status={projectStatusLabel(project.status_name)}
+        statusName={project.status_name}
         onCreateTask={() => setIsTaskDialogOpen(true)}
         returnPath={returnPath}
         returnLabel="프로젝트 목록으로 돌아가기"

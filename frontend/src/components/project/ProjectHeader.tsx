@@ -2,11 +2,13 @@ import { Button } from '@components/ui/button';
 import { Badge } from '@components/ui/badge';
 import { ArrowLeft, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { projectStatusBadgeClass } from '@/utils/status';
 
 interface ProjectHeaderProps {
   name: string;
   description: string;
   status: string;
+  statusName?: string | null; // 원본 상태 이름 (예: "IN_PROGRESS")
   onCreateTask?: () => void;
   returnPath?: string;
   returnLabel?: string;
@@ -16,6 +18,7 @@ export function ProjectHeader({
   name,
   description,
   status,
+  statusName,
   onCreateTask,
   returnPath = '/dashboard/member/projects',
   returnLabel = '프로젝트 목록으로 돌아가기',
@@ -38,7 +41,7 @@ export function ProjectHeader({
           <h1 className="text-3xl font-bold text-foreground">{name}</h1>
           <p className="text-muted-foreground mt-1">{description}</p>
           <div className="flex items-center gap-2 mt-3">
-            <Badge variant={status === '진행 중' ? 'default' : 'secondary'}>{status}</Badge>
+            <Badge className={projectStatusBadgeClass(statusName)}>{status}</Badge>
           </div>
         </div>
         <div className="flex flex-row items-end gap-3">

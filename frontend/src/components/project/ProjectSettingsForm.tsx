@@ -25,7 +25,7 @@ import { projectsQueryKeys } from '@/services/projects/projectsQueries';
 import { useCompanyMembers } from '@/services/members/membersQueries';
 import type { ProjectDetail } from '@/types/projects.types';
 import type { ProjectMemberStatus } from '@/types/members.types'; // ← 추가
-
+import { Slider } from '@components/ui/slider';
 // interface ProjectMember {
 //   user_id: string;
 //   user_name: string;
@@ -56,6 +56,7 @@ export function ProjectSettingsForm({ project, currentMembers }: ProjectSettings
     start_date: project.start_date ? new Date(project.start_date) : undefined,
     end_date: project.end_date ? new Date(project.end_date) : undefined,
     status_id: project.status_id || 1,
+    progress_rate: project.progress_rate || 0,
   });
 
   const [startDateOpen, setStartDateOpen] = useState(false);
@@ -80,6 +81,7 @@ export function ProjectSettingsForm({ project, currentMembers }: ProjectSettings
         project_description: formData.project_description,
         end_date: formData.end_date ? format(formData.end_date, 'yyyy-MM-dd') : '',
         status_id: formData.status_id,
+        progress_rate: formData.progress_rate,
         member_ids_to_add,
         member_ids_to_remove,
       });
@@ -158,7 +160,9 @@ export function ProjectSettingsForm({ project, currentMembers }: ProjectSettings
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.start_date ? format(formData.start_date, 'PPP', { locale: ko }) : '시작일 선택'}
+                    {formData.start_date
+                      ? format(formData.start_date, 'PPP', { locale: ko })
+                      : '시작일 선택'}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
@@ -188,7 +192,9 @@ export function ProjectSettingsForm({ project, currentMembers }: ProjectSettings
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.end_date ? format(formData.end_date, 'PPP', { locale: ko }) : '종료일 선택'}
+                    {formData.end_date
+                      ? format(formData.end_date, 'PPP', { locale: ko })
+                      : '종료일 선택'}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
@@ -223,6 +229,32 @@ export function ProjectSettingsForm({ project, currentMembers }: ProjectSettings
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* TODO(human): 프로젝트 진행률 입력 필드 추가
+              - Number Input 또는 Slider 중 선택
+              - 0-100 범위 제한
+              - 현재 값 표시
+          */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="progress_rate">프로젝트 진행률</Label>
+              <span className="text-sm font-medium">{formData.progress_rate}%</span>
+            </div>
+            <Slider
+              id="progress_rate"
+              min={0}
+              max={100}
+              step={1}
+              value={[formData.progress_rate]}
+              onValueChange={(value) =>
+                setFormData({
+                  ...formData,
+                  progress_rate: value[0],
+                })
+              }
+              className="w-full"
+            />
           </div>
         </CardContent>
       </Card>
