@@ -17,10 +17,20 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@components/ui/dialog';
-import { Search, MoreHorizontal, UserPlus, Settings } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@components/ui/dropdown-menu';
+import { Search, MoreHorizontal, UserPlus, Settings, UserCog, Power } from 'lucide-react';
 import LoadingSpinner from '@components/atoms/LoadingSpinner';
 import { useCompanyMembers, usePendingMembers } from '@/services/members/membersQueries';
 import { useApproveMember } from '@/services/auth/authMutations';
+import { useUpdateMemberStatus } from '@/services/members/membersMutations';
+import { EditMemberProfileDialog } from '@/components/admin/edit-member-profile-dialog';
 import type { MemberSummary } from '@/types/members.types';
 
 const AVAILABLE_PERMISSIONS = [
@@ -50,9 +60,11 @@ const STATUS_LABELS: Record<string, string> = {
 
 export function TeamManagementInterface() {
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
+  const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedMember, setSelectedMember] = useState<MemberSummary | null>(null);
   const [newRole, setNewRole] = useState({
     name: '',
     description: '',
@@ -72,6 +84,7 @@ export function TeamManagementInterface() {
   } = usePendingMembers();
 
   const approveMemberMutation = useApproveMember();
+  const updateStatusMutation = useUpdateMemberStatus();
 
   const teamMembers: MemberSummary[] = membersData?.members ?? [];
 
@@ -105,9 +118,17 @@ export function TeamManagementInterface() {
     }));
   }, [pendingMembersData?.pending_members]);
 
-  const handleMemberManagement = (member: MemberSummary) => {
-    console.log('Member management:', member);
-    // TODO: 멤버 관리 기능 구현 필요
+  const handleToggleStatus = (member: MemberSummary) => {
+    const newStatus = member.status_id === 1 ? 2 : 1; // 1: ACTIVE, 2: INACTIVE
+    updateStatusMutation.mutate({
+      userId: member.id,
+      status_id: newStatus as 1 | 2,
+    });
+  };
+
+  const handleOpenProfileDialog = (member: MemberSummary) => {
+    setSelectedMember(member);
+    setIsProfileDialogOpen(true);
   };
 
   const handleApproveRequest = (requestId: string) => {
@@ -347,13 +368,28 @@ export function TeamManagementInterface() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleMemberManagement(member)}
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>멤버 관리</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleOpenProfileDialog(member)}>
+                            <UserCog className="mr-2 h-4 w-4" />
+                            프로필 수정
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleToggleStatus(member)}
+                            disabled={updateStatusMutation.isPending}
+                          >
+                            <Power className="mr-2 h-4 w-4" />
+                            {member.status_id === 1 ? '비활성화' : '활성화'}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -395,6 +431,13 @@ export function TeamManagementInterface() {
           </CardContent>
         </Card>
       )}
+
+      {/* 프로필 수정 다이얼로그 */}
+      <EditMemberProfileDialog
+        member={selectedMember}
+        open={isProfileDialogOpen}
+        onOpenChange={setIsProfileDialogOpen}
+      />
     </div>
   );
 }
