@@ -1,5 +1,5 @@
 import api from '@/services/api';
-import type { AssignedTasksResponse } from '@/types/tasks.types';
+import type { AssignedTasksResponse, UpdateTaskDto, UpdatedTaskDto } from '@/types/tasks.types';
 import type { SuccessResponse } from '@/types/auth.types';
 
 export const tasksService = {
@@ -20,6 +20,14 @@ export const tasksService = {
       updated_at: string;
       updated_by: string;
     }>>(`/tasks/${taskId}/status`, { status_id: statusId, comment });
+    return response.data.data;
+  },
+
+  async updateTask(taskId: string, data: UpdateTaskDto) {
+    const response = await api.patch<SuccessResponse<UpdatedTaskDto>>(
+      `/tasks/${taskId}`,
+      data
+    );
     return response.data.data;
   },
 
