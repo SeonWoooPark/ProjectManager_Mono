@@ -33,7 +33,7 @@ export class MembersRepository {
 
     const data = members.map((u) => {
       const tasks_assigned = u.tasks.length;
-      const tasks_completed = u.tasks.filter((t) => t.status?.status_name === 'Completed').length;
+      const tasks_completed = u.tasks.filter((t) => t.status?.status_name === 'DONE').length;
       const projects_assigned = new Set(u.allocatedProjects.map((ap) => ap.project_id)).size;
       return {
         id: u.id,
@@ -59,10 +59,16 @@ export class MembersRepository {
     const total = data.length;
     const statistics = {
       total_members: total,
-      active_members: counts.filter((c: any) => c.status_id === 1).reduce((s, c) => s + c._count._all, 0),
-      pending_members: counts.filter((c: any) => c.status_id === 3).reduce((s, c) => s + c._count._all, 0),
+      active_members: counts
+        .filter((c: any) => c.status_id === 1)
+        .reduce((s, c) => s + c._count._all, 0),
+      pending_members: counts
+        .filter((c: any) => c.status_id === 3)
+        .reduce((s, c) => s + c._count._all, 0),
       managers: counts.filter((c: any) => c.role_id === 2).reduce((s, c) => s + c._count._all, 0),
-      team_members: counts.filter((c: any) => c.role_id === 3).reduce((s, c) => s + c._count._all, 0),
+      team_members: counts
+        .filter((c: any) => c.role_id === 3)
+        .reduce((s, c) => s + c._count._all, 0),
     };
 
     return { members: data, total, statistics };
@@ -90,7 +96,10 @@ export class MembersRepository {
     return { pending_members, total: pending_members.length };
   }
 
-  async assertProjectAccess(user: { id: string; role_id: number; company_id: string | null }, projectId: string) {
+  async assertProjectAccess(
+    user: { id: string; role_id: number; company_id: string | null },
+    projectId: string
+  ) {
     const project = await prisma.project.findUnique({ where: { id: projectId } });
     if (!project) throw new NotFoundError('프로젝트를 찾을 수 없습니다', 'project');
     if (user.role_id === UserRole.SYSTEM_ADMIN) return project;
@@ -130,16 +139,19 @@ export class MembersRepository {
       include: { status: true },
     });
 
-    const statusByUser: Record<string, { todo: number; in_progress: number; review: number; completed: number; total: number }> = {};
+    const statusByUser: Record<
+      string,
+      { todo: number; in_progress: number; review: number; completed: number; total: number }
+    > = {};
     for (const t of tasks) {
       const uid = t.assignee_id!;
       statusByUser[uid] ||= { todo: 0, in_progress: 0, review: 0, completed: 0, total: 0 };
       statusByUser[uid].total++;
       const name = t.status?.status_name || '';
-      if (name === 'Todo') statusByUser[uid].todo++;
-      else if (name === 'In Progress') statusByUser[uid].in_progress++;
-      else if (name === 'Review') statusByUser[uid].review++;
-      else if (name === 'Completed') statusByUser[uid].completed++;
+      if (name === 'TODO') statusByUser[uid].todo++;
+      else if (name === 'IN_PROGRESS') statusByUser[uid].in_progress++;
+      else if (name === 'IN_REVIEW') statusByUser[uid].review++;
+      else if (name === 'DONE') statusByUser[uid].completed++;
     }
 
     const enriched = members.map((m) => ({
