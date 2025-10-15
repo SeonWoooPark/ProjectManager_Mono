@@ -11,6 +11,7 @@ import type {
   TeamMemberSignupDto,
   ForgotPasswordDto,
   ResetPasswordDto,
+  ChangePasswordDto,
   ApproveCompanyDto,
   ApproveMemberDto,
 } from '@/types/auth.types';
@@ -252,6 +253,57 @@ export const useResetPassword = () => {
         toast({
           title: '토큰 오류',
           description: '유효하지 않거나 만료된 토큰입니다.',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: '변경 실패',
+          description: errorMessage || '비밀번호 변경에 실패했습니다.',
+          variant: 'destructive',
+        });
+      }
+    },
+  });
+};
+
+/**
+ * 비밀번호 변경 훅 (로그인 상태에서)
+ * 성공 시 모든 Refresh Token이 폐기되므로 자동으로 로그아웃 처리됨
+ */
+export const useChangePassword = () => {
+  const navigate = useNavigate();
+  const logout = useAuthStore((state) => state.logout);
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: ChangePasswordDto) => authService.changePassword(data),
+    onSuccess: () => {
+      // 상태 초기화 (모든 Refresh Token이 폐기되었으므로)
+      logout();
+      queryClient.clear();
+
+      toast({
+        title: '비밀번호 변경 완료',
+        description: '비밀번호가 성공적으로 변경되었습니다. 다시 로그인해주세요.',
+      });
+
+      // 로그인 페이지로 이동
+      navigate('/auth/login');
+    },
+    onError: (error: any) => {
+      const errorCode = error.response?.data?.error?.code;
+      const errorMessage = error.response?.data?.error?.message;
+
+      if (errorCode === 'INVALID_CURRENT_PASSWORD') {
+        toast({
+          title: '현재 비밀번호 오류',
+          description: '현재 비밀번호가 올바르지 않습니다.',
+          variant: 'destructive',
+        });
+      } else if (errorCode === 'VALIDATION_ERROR') {
+        toast({
+          title: '입력값 오류',
+          description: errorMessage || '입력값을 확인해주세요.',
           variant: 'destructive',
         });
       } else {

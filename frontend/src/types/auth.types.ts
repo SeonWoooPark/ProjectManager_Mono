@@ -96,6 +96,16 @@ export interface ResetPasswordDto {
   new_password: string;
 }
 
+export interface ChangePasswordDto {
+  current_password: string;
+  new_password: string;
+  confirm_password: string;
+}
+
+export interface PasswordChangeResponseDto {
+  message: string;
+}
+
 export interface PasswordResetResponseDto {
   message: string;
   reset_url?: string;

@@ -10,6 +10,7 @@ import { useState, useMemo, useEffect } from "react"
 import { useAuthStore } from "@/store/authStore"
 import { useCompanyMembers } from "@/services/members/membersQueries"
 import { useUpdateMemberProfile } from "@/services/members/membersMutations"
+import { useChangePassword } from "@/services/auth/authMutations"
 import LoadingSpinner from "@components/atoms/LoadingSpinner"
 
 const ROLE_LABELS: Record<number, string> = {
@@ -28,6 +29,7 @@ export function UserProfileSettings() {
   const { user: authUser, updateUser } = useAuthStore()
   const { data: membersData, isLoading, isError } = useCompanyMembers()
   const updateProfileMutation = useUpdateMemberProfile()
+  const changePasswordMutation = useChangePassword()
 
   // 회사 멤버 목록에서 현재 로그인한 사용자 찾기
   const currentUser = useMemo(() => {
@@ -88,13 +90,42 @@ export function UserProfileSettings() {
   }
 
   const handlePasswordChange = () => {
+    // 입력값 검증
+    if (!passwordData.currentPassword) {
+      alert("현재 비밀번호를 입력해주세요.")
+      return
+    }
+    if (!passwordData.newPassword) {
+      alert("새 비밀번호를 입력해주세요.")
+      return
+    }
+    if (passwordData.newPassword.length < 8) {
+      alert("새 비밀번호는 최소 8자 이상이어야 합니다.")
+      return
+    }
+    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(passwordData.newPassword)) {
+      alert("새 비밀번호는 영문 대소문자와 숫자를 포함해야 합니다.")
+      return
+    }
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       alert("새 비밀번호가 일치하지 않습니다.")
       return
     }
-    console.log("Changing password")
-    // TODO: 비밀번호 변경 API 연동 필요
-    setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" })
+
+    // API 호출
+    changePasswordMutation.mutate(
+      {
+        current_password: passwordData.currentPassword,
+        new_password: passwordData.newPassword,
+        confirm_password: passwordData.confirmPassword,
+      },
+      {
+        onSuccess: () => {
+          // 성공 시 폼 초기화 (실제로는 로그아웃되어 페이지가 이동됨)
+          setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" })
+        },
+      }
+    )
   }
 
   const handleNotificationSave = () => {
@@ -251,9 +282,19 @@ export function UserProfileSettings() {
             </div>
           </div>
 
-          <Button onClick={handlePasswordChange} className="gap-2">
+          <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mb-2">
+            <p className="text-sm text-amber-800">
+              ⚠️ 비밀번호 변경 시 모든 기기에서 자동으로 로그아웃됩니다. 새 비밀번호로 다시 로그인해주세요.
+            </p>
+          </div>
+
+          <Button 
+            onClick={handlePasswordChange} 
+            disabled={changePasswordMutation.isPending}
+            className="gap-2"
+          >
             <Key className="h-4 w-4" />
-            비밀번호 변경
+            {changePasswordMutation.isPending ? "변경 중..." : "비밀번호 변경"}
           </Button>
         </CardContent>
       </Card>

@@ -6,12 +6,14 @@ import type {
   TeamMemberSignupDto,
   ForgotPasswordDto,
   ResetPasswordDto,
+  ChangePasswordDto,
   RefreshTokenResponseDto,
   ApproveCompanyDto,
   ApproveMemberDto,
   SuccessResponse,
   User,
   PasswordResetResponseDto,
+  PasswordChangeResponseDto,
   ApprovalResponseDto,
 } from '@/types/auth.types';
 
@@ -106,6 +108,18 @@ export const authService = {
   async resetPassword(data: ResetPasswordDto): Promise<PasswordResetResponseDto> {
     const response = await api.post<SuccessResponse<PasswordResetResponseDto>>(
       '/auth/password/reset',
+      data
+    );
+    return response.data.data;
+  },
+
+  /**
+   * 비밀번호 변경 (로그인 상태에서)
+   * 성공 시 모든 Refresh Token이 폐기되므로 재인증 필요
+   */
+  async changePassword(data: ChangePasswordDto): Promise<PasswordChangeResponseDto> {
+    const response = await api.post<SuccessResponse<PasswordChangeResponseDto>>(
+      '/auth/password/change',
       data
     );
     return response.data.data;
