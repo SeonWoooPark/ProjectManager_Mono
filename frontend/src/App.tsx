@@ -45,7 +45,6 @@ const MemberTeamPage = lazy(() => import('@pages/dashboard/member/MemberTeamPage
 const MemberSettingsPage = lazy(() => import('@pages/dashboard/member/MemberSettingsPage'));
 
 // General Pages
-const ProfilePage = lazy(() => import('@pages/ProfilePage'));
 const NotFoundPage = lazy(() => import('@pages/NotFoundPage'));
 
 function App() {
@@ -116,11 +115,6 @@ function App() {
             <Route path="tasks" element={<MemberTasksPage />} />
             <Route path="team" element={<MemberTeamPage />} />
             <Route path="settings" element={<MemberSettingsPage />} />
-          </Route>
-
-          {/* Profile - 모든 로그인 사용자 접근 가능 */}
-          <Route path="/profile" element={<ProtectedRoute />}>
-            <Route index element={<ProfilePage />} />
           </Route>
 
           {/* 404 */}
