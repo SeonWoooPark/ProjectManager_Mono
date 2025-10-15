@@ -91,4 +91,17 @@ export class ProjectsController {
       next(err);
     }
   }
+
+  async deleteProject(req: AuthenticatedRequest, res: Response, next: Function): Promise<any> {
+    try {
+      const user = req.user!;
+      const { project_id: projectId } = req.params;
+      await this.service.deleteProject(user, projectId);
+      return ResponseFormatter.success(res, {
+        message: '프로젝트가 삭제되었습니다'
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
 }

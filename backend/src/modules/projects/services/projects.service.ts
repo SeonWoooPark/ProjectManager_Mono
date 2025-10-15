@@ -135,4 +135,21 @@ export class ProjectsService {
     if (!valid.valid) throw new ValidationError(valid.errors.join(', '));
     return this.repo.getProjectMembers(user, projectId);
   }
+
+  async deleteProject(
+    user: NonNullable<AuthenticatedRequest['user']>,
+    projectId: string
+  ) {
+    // 1. ID 형식 검증
+    const valid = IdValidator.validateProjectId(projectId);
+    if (!valid.valid) throw new ValidationError(valid.errors.join(', '));
+
+    // 2. 권한 검증: TEAM_MEMBER(3)는 삭제 불가
+    if (user.role_id === 3) {
+      throw new AuthorizationError('프로젝트 삭제 권한이 없습니다');
+    }
+
+    // 3. Repository 호출
+    await this.repo.deleteProject(user, projectId);
+  }
 }
