@@ -9,6 +9,7 @@ import {
   LoginRequestDto,
   ForgotPasswordRequestDto,
   ResetPasswordRequestDto,
+  ChangePasswordRequestDto,
   // CompanyApprovalRequestDto,
   // MemberApprovalRequestDto,
 } from '@modules/auth/dto/request';
@@ -161,6 +162,25 @@ export class AuthController {
 
       const result = await this.authService.resetPassword(
         dto.token,
+        dto.new_password,
+        dto.confirm_password
+      );
+
+      ResponseFormatter.success(res, result, result.message);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Change Password
+  async changePassword(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const dto: ChangePasswordRequestDto = req.body;
+      const userId = String(req.user!.id);
+
+      const result = await this.authService.changePassword(
+        userId,
+        dto.current_password,
         dto.new_password,
         dto.confirm_password
       );

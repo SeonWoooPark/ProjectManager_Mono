@@ -3,6 +3,8 @@ import { passwordManager } from '../utils/password';
 import {
   PasswordPolicyError,
   PasswordMismatchError,
+  NotFoundError,
+  InvalidCurrentPasswordError,
 } from '@shared/utils/errors';
 import { UserRepository } from '@modules/auth/repositories/user.repository';
 import { TokenService } from './token.service';
@@ -127,13 +129,13 @@ export class PasswordService {
     // Get user
     const user = await this.userRepository.findById(userId);
     if (!user) {
-      throw new Error('User not found');
+      throw new NotFoundError('사용자를 찾을 수 없습니다', 'User');
     }
 
     // Verify current password
     const isValid = await this.verifyPassword(currentPassword, user.password_hash);
     if (!isValid) {
-      throw new Error('Current password is incorrect');
+      throw new InvalidCurrentPasswordError();
     }
 
     // Hash new password

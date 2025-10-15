@@ -65,6 +65,21 @@ export class AuthService {
     return await this.passwordService.resetPassword(token, newPassword, confirmPassword);
   }
 
+  // Change Password - Delegate to PasswordService
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+    confirmPassword: string
+  ) {
+    return await this.passwordService.changePassword(
+      userId,
+      currentPassword,
+      newPassword,
+      confirmPassword
+    );
+  }
+
   // Approve Company - Delegate to ApprovalService
   async approveCompany(
     companyId: string, 
