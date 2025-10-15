@@ -4,6 +4,7 @@ import { Badge } from '@components/ui/badge';
 import { Button } from '@components/ui/button';
 import { Avatar, AvatarFallback } from '@components/ui/avatar';
 import { ReadOnlyKanbanBoard } from '@components/dashboard/read-only-kanban-board';
+import { DraggableKanbanBoard } from '@components/dashboard/draggable-kanban-board';
 import { ProjectSettingsForm } from './ProjectSettingsForm';
 import { CheckSquare, Users, Activity, LayoutGrid, Settings } from 'lucide-react';
 import { taskStatusBadgeClass, taskStatusLabel, TaskStatusKey } from '@/utils/status';
@@ -108,7 +109,11 @@ export function ProjectTabs({
       </TabsList>
 
       <TabsContent value="kanban">
-        <ReadOnlyKanbanBoard tasks={kanbanTasks} />
+        {userRole === 'COMPANY_MANAGER' ? (
+          <DraggableKanbanBoard tasks={kanbanTasks} onTaskStatusChange={onTaskStatusChange} />
+        ) : (
+          <ReadOnlyKanbanBoard tasks={kanbanTasks} />
+        )}
       </TabsContent>
 
       <TabsContent value="tasks">
