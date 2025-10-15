@@ -42,4 +42,27 @@ export class MembersController {
       next(err);
     }
   }
+
+  async updateMemberStatus(req: AuthenticatedRequest, res: Response, next: Function): Promise<any> {
+    try {
+      const user = req.user!;
+      const { userId } = req.params;
+      const { status_id: statusId } = req.body;
+      const result = await this.service.updateMemberStatus(user, userId, statusId);
+      return ResponseFormatter.success(res, result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async updateMemberProfile(req: AuthenticatedRequest, res: Response, next: Function): Promise<any> {
+    try {
+      const user = req.user!;
+      const { userId } = req.params;
+      const result = await this.service.updateMemberProfile(user, userId, req.body);
+      return ResponseFormatter.success(res, result);
+    } catch (err) {
+      next(err);
+    }
+  }
 }

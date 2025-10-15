@@ -2,6 +2,7 @@ import { prisma } from '@infrastructure/database/prisma.service';
 import { AuthorizationError, NotFoundError } from '@shared/utils/errors';
 import { UserRole } from '@modules/auth/interfaces/auth.types';
 import { injectable } from 'tsyringe';
+import { User } from '@prisma/client';
 
 @injectable()
 export class MembersRepository {
@@ -159,5 +160,46 @@ export class MembersRepository {
       members: enriched,
       total_members: enriched.length,
     };
+  }
+
+  async findMemberById(userId: string) {
+    return prisma.user.findUnique({
+      where: { id: userId },
+      include: { role: true, status: true },
+    });
+  }
+
+  async updateMemberStatus(userId: string, statusId: number) {
+    return prisma.user.update({
+      where: { id: userId },
+      data: {
+        status_id: statusId,
+        updated_at: new Date(),
+      },
+      include: { role: true, status: true },
+    });
+  }
+
+  async updateMemberProfile(
+    userId: string,
+    data: Partial<Pick<User, 'user_name' | 'phone_number' | 'email'>>
+  ) {
+    return prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...data,
+        updated_at: new Date(),
+      },
+      include: { role: true, status: true },
+    });
+  }
+
+  async findMemberByEmail(email: string, excludeUserId?: string) {
+    return prisma.user.findFirst({
+      where: {
+        email,
+        ...(excludeUserId ? { NOT: { id: excludeUserId } } : {}),
+      },
+    });
   }
 }

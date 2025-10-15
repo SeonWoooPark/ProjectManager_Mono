@@ -92,6 +92,8 @@ Authorization: Bearer {access_token}
 | GET | / | 회사 멤버 목록 | ALL | Query: page, limit | MemberListDto |
 | GET | /pending | 승인 대기 멤버 | COMPANY_MANAGER | - | PendingMemberListDto |
 | GET | /projects/:project_id | 프로젝트별 멤버 | ALL | - | ProjectMemberListDto |
+| PATCH | /:userId/status | 사용자 활성/비활성 전환 | SYSTEM_ADMIN, COMPANY_MANAGER (동일 회사) | Body: { status_id: 1 \| 2 } | MemberDto |
+| PATCH | /:userId/profile | 사용자 프로필 수정 (이름/전화/이메일) | SYSTEM_ADMIN, COMPANY_MANAGER (동일 회사) 또는 본인 | Body: { user_name?, phone_number?, email? } | MemberDto |
 
 ## 4. DTO 구조
 
