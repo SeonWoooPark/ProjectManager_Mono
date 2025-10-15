@@ -3,6 +3,7 @@ import { projectsService } from './projectsService';
 import { projectsQueryKeys } from './projectsQueries';
 import { tasksQueryKeys } from '../tasks/tasksQueries';
 import type { CreateTaskDto, TaskDto } from '@/types/tasks.types';
+import type { SuccessResponse } from '@/types/auth.types';
 
 export const useCreateTask = () => {
   const queryClient = useQueryClient();
@@ -30,6 +31,44 @@ export const useCreateTask = () => {
       });
 
       // 할당된 작업 목록도 무효화 (내 작업 페이지 업데이트를 위해)
+      queryClient.invalidateQueries({
+        queryKey: tasksQueryKeys.all,
+      });
+    },
+  });
+};
+
+export const useDeleteProject = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    SuccessResponse<{ message: string }>,
+    Error,
+    string
+  >({
+    mutationFn: (projectId: string) => projectsService.deleteProject(projectId),
+    onSuccess: (_, projectId) => {
+      // 캐시에서 프로젝트 상세 제거
+      queryClient.removeQueries({
+        queryKey: projectsQueryKeys.detail(projectId),
+      });
+
+      // 프로젝트 작업 목록 제거
+      queryClient.removeQueries({
+        queryKey: projectsQueryKeys.tasks(projectId),
+      });
+
+      // 프로젝트 멤버 목록 제거
+      queryClient.removeQueries({
+        queryKey: projectsQueryKeys.members(projectId),
+      });
+
+      // 프로젝트 목록 무효화
+      queryClient.invalidateQueries({
+        queryKey: projectsQueryKeys.all,
+      });
+
+      // 할당된 작업 목록도 무효화 (삭제된 프로젝트의 작업 제거를 위해)
       queryClient.invalidateQueries({
         queryKey: tasksQueryKeys.all,
       });

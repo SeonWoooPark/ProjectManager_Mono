@@ -1,5 +1,6 @@
 import { useState, useMemo, type FormEvent } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@components/ui/button';
 import { Input } from '@components/ui/input';
 import { Label } from '@components/ui/label';
@@ -15,13 +16,24 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@components/ui/card';
 import { Calendar } from '@components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@components/ui/alert-dialog';
+import { CalendarIcon, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useToast } from '@components/ui/use-toast';
 import { projectsService } from '@/services/projects/projectsService';
 import { projectsQueryKeys } from '@/services/projects/projectsQueries';
+import { useDeleteProject } from '@/services/projects/projectsMutations';
 import { useCompanyMembers } from '@/services/members/membersQueries';
 import type { ProjectDetail } from '@/types/projects.types';
 import type { ProjectMemberStatus } from '@/types/members.types'; // ← 추가
@@ -49,6 +61,9 @@ const PROJECT_STATUS_OPTIONS = [
 export function ProjectSettingsForm({ project, currentMembers }: ProjectSettingsFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     project_name: project.project_name,
@@ -107,6 +122,8 @@ export function ProjectSettingsForm({ project, currentMembers }: ProjectSettings
     },
   });
 
+  const deleteMutation = useDeleteProject();
+
   const handleMemberToggle = (memberId: string) => {
     setSelectedMemberIds((prev) =>
       prev.includes(memberId) ? prev.filter((id) => id !== memberId) : [...prev, memberId]
@@ -116,6 +133,23 @@ export function ProjectSettingsForm({ project, currentMembers }: ProjectSettings
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     mutation.mutate();
+  };
+
+  const handleDeleteClick = () => {
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    deleteMutation.mutate(project.id, {
+      onSuccess: () => {
+        toast({ title: '프로젝트가 성공적으로 삭제되었습니다.' });
+        navigate('/admin/company/projects');
+      },
+      onError: () => {
+        toast({ title: '프로젝트 삭제에 실패했습니다.', variant: 'destructive' });
+      },
+    });
+    setIsDeleteDialogOpen(false);
   };
 
   return (
@@ -291,11 +325,46 @@ export function ProjectSettingsForm({ project, currentMembers }: ProjectSettings
         </CardContent>
       </Card>
 
-      <div className="flex justify-end gap-3">
+      <div className="flex justify-between gap-3">
+        <Button
+          type="button"
+          variant="destructive"
+          onClick={handleDeleteClick}
+          disabled={deleteMutation.isPending}
+        >
+          <Trash2 className="mr-2 h-4 w-4" />
+          {deleteMutation.isPending ? '삭제 중...' : '프로젝트 삭제'}
+        </Button>
+
         <Button type="submit" disabled={mutation.isPending}>
           {mutation.isPending ? '저장 중...' : '변경사항 저장'}
         </Button>
       </div>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>프로젝트 영구 삭제</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p className="font-semibold text-destructive">⚠️ 경고: 이 작업은 되돌릴 수 없습니다.</p>
+              <p>
+                프로젝트 "<span className="font-semibold">{project.project_name}</span>"와 관련된
+                모든 작업, 데이터가 영구적으로 삭제됩니다.
+              </p>
+              <p>정말로 삭제하시겠습니까?</p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              삭제
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </form>
   );
 }
