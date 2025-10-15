@@ -1,6 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@components/ui/card';
 import { Badge } from '@components/ui/badge';
+import { Button } from '@components/ui/button';
 import { Avatar, AvatarFallback } from '@components/ui/avatar';
 import { ReadOnlyKanbanBoard } from '@components/dashboard/read-only-kanban-board';
 import { ProjectSettingsForm } from './ProjectSettingsForm';
@@ -50,6 +51,7 @@ interface ProjectTabsProps {
   userRole?: 'TEAM_MEMBER' | 'COMPANY_MANAGER';
   project?: any;
   projectMembers?: any[];
+  onTaskStatusChange?: (taskId: string, newStatus: TaskStatusKey) => Promise<void>;
 }
 
 export function ProjectTabs({
@@ -62,6 +64,7 @@ export function ProjectTabs({
   userRole = 'TEAM_MEMBER',
   project,
   projectMembers = [],
+  onTaskStatusChange,
 }: ProjectTabsProps) {
   return (
     <Tabs defaultValue="kanban" className="space-y-4">
@@ -148,11 +151,24 @@ export function ProjectTabs({
                         <span className="text-xs text-muted-foreground">마감: {task.dueDate}</span>
                       </div>
                     </div>
-                    {task.assignee === currentUser && (
-                      <Badge variant="outline" className="ml-4">
-                        내 작업
-                      </Badge>
-                    )}
+
+                    {/* 오른쪽 버튼 영역 */}
+                    <div className="flex items-center gap-2 ml-4">
+                      {task.assignee === currentUser && (
+                        <Badge variant="outline">내 작업</Badge>
+                      )}
+
+                      {/* 회사 관리자이고 검토 중인 작업일 때 검토 완료 버튼 표시 */}
+                      {userRole === 'COMPANY_MANAGER' && task.statusKey === 'review' && (
+                        <Button
+                          size="sm"
+                          onClick={() => onTaskStatusChange?.(task.id, 'completed')}
+                          className="h-8"
+                        >
+                          검토 완료
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

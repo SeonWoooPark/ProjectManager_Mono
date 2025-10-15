@@ -12,11 +12,13 @@ import {
   useProjectMembers,
   useProjectTasks,
 } from '@/services/projects/projectsQueries';
+import { useUpdateTaskStatus } from '@/services/tasks/tasksMutations';
 import { useAuthStore } from '@/store/authStore';
 import {
   projectStatusLabel,
   taskStatusLabel,
   toTaskStatusKey,
+  toTaskStatusId,
   TaskStatusKey,
 } from '@/utils/status';
 import type { ProjectTaskSummary } from '@/types/projects.types';
@@ -64,6 +66,9 @@ export function UnifiedProjectDetailView({
 
   // 작업 생성 다이얼로그 상태
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
+
+  // 작업 상태 변경 mutation
+  const updateTaskStatus = useUpdateTaskStatus();
 
   const {
     data: project,
@@ -206,6 +211,20 @@ export function UnifiedProjectDetailView({
       };
     });
 
+  // 작업 상태 변경 핸들러
+  const handleTaskStatusChange = async (taskId: string, newStatusKey: TaskStatusKey) => {
+    try {
+      const statusId = toTaskStatusId(newStatusKey);
+      await updateTaskStatus.mutateAsync({
+        taskId,
+        statusId,
+        comment: '관리자가 검토를 완료했습니다.'
+      });
+    } catch (error) {
+      console.error('작업 상태 변경 실패:', error);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <ProjectHeader
@@ -242,6 +261,7 @@ export function UnifiedProjectDetailView({
         userRole={userRole}
         project={project}
         projectMembers={projectMembers}
+        onTaskStatusChange={handleTaskStatusChange}
       />
 
       {/* 작업 생성 다이얼로그 */}
