@@ -381,13 +381,16 @@ export function TeamManagementInterface() {
                             <UserCog className="mr-2 h-4 w-4" />
                             프로필 수정
                           </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleToggleStatus(member)}
-                            disabled={updateStatusMutation.isPending}
-                          >
-                            <Power className="mr-2 h-4 w-4" />
-                            {member.status_id === 1 ? '비활성화' : '활성화'}
-                          </DropdownMenuItem>
+                          {/* 회사 관리자가 아닌 경우에만 상태 변경 버튼 표시 */}
+                          {member.role_id !== 2 && (
+                            <DropdownMenuItem
+                              onClick={() => handleToggleStatus(member)}
+                              disabled={updateStatusMutation.isPending}
+                            >
+                              <Power className="mr-2 h-4 w-4" />
+                              {member.status_id === 1 ? '비활성화' : '활성화'}
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
