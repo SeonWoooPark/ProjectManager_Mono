@@ -2,8 +2,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@comp
 import { Button } from "@components/ui/button"
 import { Badge } from "@components/ui/badge"
 import { Building2, Users, TrendingUp, Clock, CheckCircle, AlertCircle, Settings } from "lucide-react"
-import { CompanyRequestsTable } from "./company-requests-table"
-import { RecentActivitiesCard } from "./recent-activities-card"
 import { Link } from 'react-router-dom'
 
 // Mock data
@@ -142,13 +140,14 @@ export function SystemAdminDashboard() {
           </div>
         </CardHeader>
         <CardContent>
-          <CompanyRequestsTable requests={pendingRequests} />
+          <div className="text-center py-4 text-muted-foreground">
+            <p>승인 대기 중인 요청을 확인하려면 <Link to="/admin/system/requests" className="text-primary hover:underline">승인 요청 관리</Link> 페이지로 이동하세요.</p>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Recent Activities and Company Management */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <RecentActivitiesCard />
+      {/* Company Management */}
+      <div className="grid grid-cols-1 gap-6">
 
         <Card>
           <CardHeader>

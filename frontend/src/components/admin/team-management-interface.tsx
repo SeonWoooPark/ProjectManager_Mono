@@ -17,28 +17,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@components/ui/dialog';
-import { UserManagementDialog } from './user-management-dialog';
-import { JoinRequestsCard } from './join-requests-card';
 import { Search, MoreHorizontal, UserPlus, Settings } from 'lucide-react';
 import LoadingSpinner from '@components/atoms/LoadingSpinner';
 import { useCompanyMembers, usePendingMembers } from '@/services/members/membersQueries';
 import { useApproveMember } from '@/services/auth/authMutations';
 import type { MemberSummary } from '@/types/members.types';
-
-interface DialogMember {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  department: string;
-  joinDate: string;
-  lastActive: string;
-  status: 'active' | 'inactive';
-  permissions: string[];
-  completedTasks: number;
-  currentProjects: number;
-  isAdmin: boolean;
-}
 
 const AVAILABLE_PERMISSIONS = [
   '프로젝트 생성',
@@ -65,26 +48,7 @@ const STATUS_LABELS: Record<string, string> = {
   PENDING: '승인 대기',
 };
 
-const mapMemberToDialog = (member: MemberSummary): DialogMember => {
-  return {
-    id: member.id,
-    name: member.user_name,
-    email: member.email,
-    role: ROLE_LABELS[member.role_name] ?? member.role_name,
-    department: '미지정',
-    joinDate: member.created_at ? member.created_at.slice(0, 10) : '정보 없음',
-    lastActive: '정보 없음',
-    status: member.status_name === 'ACTIVE' ? 'active' : 'inactive',
-    permissions: [],
-    completedTasks: member.tasks_completed,
-    currentProjects: member.projects_assigned,
-    isAdmin: member.role_name === '회사 관리자',
-  };
-};
-
 export function TeamManagementInterface() {
-  const [selectedMember, setSelectedMember] = useState<DialogMember | null>(null);
-  const [isManagementDialogOpen, setIsManagementDialogOpen] = useState(false);
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -142,8 +106,8 @@ export function TeamManagementInterface() {
   }, [pendingMembersData?.pending_members]);
 
   const handleMemberManagement = (member: MemberSummary) => {
-    setSelectedMember(mapMemberToDialog(member));
-    setIsManagementDialogOpen(true);
+    console.log('Member management:', member);
+    // TODO: 멤버 관리 기능 구현 필요
   };
 
   const handleApproveRequest = (requestId: string) => {
@@ -402,18 +366,34 @@ export function TeamManagementInterface() {
         </CardContent>
       </Card>
 
-      <JoinRequestsCard
-        requests={joinRequests}
-        onApprove={handleApproveRequest}
-        onReject={handleRejectRequest}
-      />
-
-      {selectedMember && (
-        <UserManagementDialog
-          member={selectedMember}
-          isOpen={isManagementDialogOpen}
-          onClose={() => setIsManagementDialogOpen(false)}
-        />
+      {joinRequests.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>가입 요청</CardTitle>
+            <CardDescription>팀원 가입 요청을 검토하고 승인하세요</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {joinRequests.map((request) => (
+                <div key={request.id} className="flex items-center justify-between border rounded-lg p-4">
+                  <div>
+                    <p className="font-medium text-foreground">{request.name}</p>
+                    <p className="text-sm text-muted-foreground">{request.email}</p>
+                    <p className="text-xs text-muted-foreground">요청일: {request.requestDate}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => handleApproveRequest(request.id)}>
+                      승인
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleRejectRequest(request.id)}>
+                      거부
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
