@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { tasksService } from './tasksService';
 import { tasksQueryKeys } from './tasksQueries';
 import { projectsQueryKeys } from '../projects/projectsQueries';
+import { membersQueryKeys } from '../members/membersQueries';
 import { toast } from '@/components/ui/use-toast';
 import type { UpdateTaskDto, UpdatedTaskDto } from '@/types/tasks.types';
 
@@ -24,13 +25,18 @@ export const useUpdateTask = () => {
     onSuccess: (data) => {
       // 할당된 작업 목록 무효화
       queryClient.invalidateQueries({ queryKey: tasksQueryKeys.all });
-      
+
       // 프로젝트 관련 쿼리 무효화 (진행률 업데이트)
-      queryClient.invalidateQueries({ 
-        queryKey: projectsQueryKeys.detail(data.project_id) 
+      queryClient.invalidateQueries({
+        queryKey: projectsQueryKeys.detail(data.project_id)
       });
-      queryClient.invalidateQueries({ 
-        queryKey: projectsQueryKeys.tasks(data.project_id) 
+      queryClient.invalidateQueries({
+        queryKey: projectsQueryKeys.tasks(data.project_id)
+      });
+
+      // 멤버 목록 무효화 (작업 담당자 변경 시 업데이트)
+      queryClient.invalidateQueries({
+        queryKey: membersQueryKeys.all,
       });
 
       toast({
@@ -76,24 +82,29 @@ export const useUpdateTaskStatus = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ 
-      taskId, 
-      statusId, 
-      comment 
-    }: { 
-      taskId: string; 
-      statusId: number; 
-      comment?: string 
+    mutationFn: async ({
+      taskId,
+      statusId,
+      comment
+    }: {
+      taskId: string;
+      statusId: number;
+      comment?: string
     }) => {
       return tasksService.updateStatus(taskId, statusId, comment);
     },
     onSuccess: () => {
-      toast({ 
-        title: '작업 상태가 업데이트되었습니다.' 
+      toast({
+        title: '작업 상태가 업데이트되었습니다.'
       });
-      
+
       queryClient.invalidateQueries({ queryKey: tasksQueryKeys.all });
       queryClient.invalidateQueries({ queryKey: projectsQueryKeys.all });
+
+      // 멤버 목록 무효화 (작업 상태 변경 시 통계 업데이트)
+      queryClient.invalidateQueries({
+        queryKey: membersQueryKeys.all,
+      });
     },
     onError: (error: any) => {
       const errorMessage = error.response?.data?.error?.message;

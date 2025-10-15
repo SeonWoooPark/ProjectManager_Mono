@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@components/ui/card';
 import { Button } from '@components/ui/button';
 import { Badge } from '@components/ui/badge';
+import { Input } from '@components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@components/ui/select';
-import { CheckSquare, Clock, AlertCircle, Calendar, Plus } from 'lucide-react';
+import { CheckSquare, Clock, AlertCircle, Calendar, Plus, Search } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import LoadingSpinner from '@components/atoms/LoadingSpinner';
 import { useAssignedTasks } from '@/services/tasks/tasksQueries';
@@ -53,6 +54,7 @@ const statusOrder: TaskStatusKey[] = ['todo', 'inProgress', 'review', 'completed
 export function MemberTasksView() {
   const [statusFilter, setStatusFilter] = useState<TaskStatusKey | 'all'>('all');
   const [projectFilter, setProjectFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskSummary | null>(null);
 
@@ -109,7 +111,10 @@ export function MemberTasksView() {
   const filteredTasks = tasks.filter((task) => {
     const statusMatch = statusFilter === 'all' || task.status === statusFilter;
     const projectMatch = projectFilter === 'all' || task.project === projectFilter;
-    return statusMatch && projectMatch;
+    const searchMatch =
+      searchQuery === '' ||
+      task.title.toLowerCase().includes(searchQuery.toLowerCase());
+    return statusMatch && projectMatch && searchMatch;
   });
 
   // 할당된 프로젝트만 필터링 (member-projects-view.tsx와 동일한 방식)
@@ -180,39 +185,43 @@ export function MemberTasksView() {
       <Card>
         <CardHeader>
           <CardTitle>작업 필터</CardTitle>
-          <CardDescription>상태와 프로젝트로 작업을 필터링하세요</CardDescription>
+          <CardDescription>검색어, 상태, 프로젝트로 작업을 필터링하세요</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <Select value={statusFilter} onValueChange={(value: TaskStatusKey | 'all') => setStatusFilter(value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="상태 선택" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">모든 상태</SelectItem>
-                  <SelectItem value="todo">할 일</SelectItem>
-                  <SelectItem value="inProgress">진행 중</SelectItem>
-                  <SelectItem value="review">검토</SelectItem>
-                  <SelectItem value="completed">완료</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center">
+            <div className="flex items-center gap-2 flex-1">
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="작업 제목 검색..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-            <div className="flex-1">
-              <Select value={projectFilter} onValueChange={setProjectFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="프로젝트 선택" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">모든 프로젝트</SelectItem>
-                  {assignedProjects.map((project) => (
-                    <SelectItem key={project.id} value={project.project_name}>
-                      {project.project_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={statusFilter} onValueChange={(value: TaskStatusKey | 'all') => setStatusFilter(value)}>
+              <SelectTrigger className="w-full md:w-40">
+                <SelectValue placeholder="상태 선택" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">모든 상태</SelectItem>
+                <SelectItem value="todo">할 일</SelectItem>
+                <SelectItem value="inProgress">진행 중</SelectItem>
+                <SelectItem value="review">검토</SelectItem>
+                <SelectItem value="completed">완료</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={projectFilter} onValueChange={setProjectFilter}>
+              <SelectTrigger className="w-full md:w-40">
+                <SelectValue placeholder="프로젝트 선택" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">모든 프로젝트</SelectItem>
+                {assignedProjects.map((project) => (
+                  <SelectItem key={project.id} value={project.project_name}>
+                    {project.project_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>

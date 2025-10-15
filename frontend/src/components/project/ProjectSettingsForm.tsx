@@ -1,5 +1,4 @@
 import { useState, useMemo, type FormEvent } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@components/ui/button';
 import { Input } from '@components/ui/input';
@@ -31,9 +30,7 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useToast } from '@components/ui/use-toast';
-import { projectsService } from '@/services/projects/projectsService';
-import { projectsQueryKeys } from '@/services/projects/projectsQueries';
-import { useDeleteProject } from '@/services/projects/projectsMutations';
+import { useDeleteProject, useUpdateProject } from '@/services/projects/projectsMutations';
 import { useCompanyMembers } from '@/services/members/membersQueries';
 import type { ProjectDetail } from '@/types/projects.types';
 import type { ProjectMemberStatus } from '@/types/members.types'; // ← 추가
@@ -60,7 +57,6 @@ const PROJECT_STATUS_OPTIONS = [
 
 export function ProjectSettingsForm({ project, currentMembers }: ProjectSettingsFormProps) {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -85,43 +81,7 @@ export function ProjectSettingsForm({ project, currentMembers }: ProjectSettings
   const { data: membersData } = useCompanyMembers({ status_id: 1, role_id: 3 });
   const availableMembers = useMemo(() => membersData?.members ?? [], [membersData?.members]);
 
-  const mutation = useMutation({
-    mutationFn: () => {
-      const currentMemberIds = currentMembers.map((m) => m.id);
-      const member_ids_to_add = selectedMemberIds.filter((id) => !currentMemberIds.includes(id));
-      const member_ids_to_remove = currentMemberIds.filter((id) => !selectedMemberIds.includes(id));
-
-      return projectsService.updateProject(project.id, {
-        project_name: formData.project_name,
-        project_description: formData.project_description,
-        end_date: formData.end_date ? format(formData.end_date, 'yyyy-MM-dd') : '',
-        status_id: formData.status_id,
-        progress_rate: formData.progress_rate,
-        member_ids_to_add,
-        member_ids_to_remove,
-      });
-    },
-    onSuccess: (updatedProject) => {
-      // 1. 서버 응답으로 프로젝트 상세 캐시 즉시 업데이트
-      queryClient.setQueryData(projectsQueryKeys.detail(project.id), updatedProject);
-
-      // 2. 멤버 정보는 별도 엔드포인트이므로 refetch 트리거
-      queryClient.invalidateQueries({
-        queryKey: projectsQueryKeys.members(project.id),
-      });
-
-      // 3. 프로젝트 목록 캐시도 갱신 (목록 페이지 동기화)
-      queryClient.invalidateQueries({
-        queryKey: projectsQueryKeys.all,
-      });
-
-      toast({ title: '프로젝트가 성공적으로 수정되었습니다.' });
-    },
-    onError: () => {
-      toast({ title: '프로젝트 수정에 실패했습니다.', variant: 'destructive' });
-    },
-  });
-
+  const mutation = useUpdateProject();
   const deleteMutation = useDeleteProject();
 
   const handleMemberToggle = (memberId: string) => {
@@ -132,7 +92,33 @@ export function ProjectSettingsForm({ project, currentMembers }: ProjectSettings
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    mutation.mutate();
+
+    const currentMemberIds = currentMembers.map((m) => m.id);
+    const member_ids_to_add = selectedMemberIds.filter((id) => !currentMemberIds.includes(id));
+    const member_ids_to_remove = currentMemberIds.filter((id) => !selectedMemberIds.includes(id));
+
+    mutation.mutate(
+      {
+        projectId: project.id,
+        data: {
+          project_name: formData.project_name,
+          project_description: formData.project_description,
+          end_date: formData.end_date ? format(formData.end_date, 'yyyy-MM-dd') : '',
+          status_id: formData.status_id,
+          progress_rate: formData.progress_rate,
+          member_ids_to_add,
+          member_ids_to_remove,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast({ title: '프로젝트가 성공적으로 수정되었습니다.' });
+        },
+        onError: () => {
+          toast({ title: '프로젝트 수정에 실패했습니다.', variant: 'destructive' });
+        },
+      }
+    );
   };
 
   const handleDeleteClick = () => {
