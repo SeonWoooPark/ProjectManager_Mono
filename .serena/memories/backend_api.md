@@ -61,6 +61,7 @@ Authorization: Bearer {access_token}
 | Method | Endpoint | 설명 | 권한 | Request Body | Response |
 |--------|----------|------|------|--------------|----------|
 | POST | /logout | 로그아웃 | ALL | - | LogoutResponseDto |
+| POST | /password/change | 비밀번호 변경 | ALL | ChangePasswordDto | PasswordChangeResponseDto |
 | POST | /admin/approve/company | 회사 승인 | SYSTEM_ADMIN | CompanyApprovalDto | ApprovalResponseDto |
 | POST | /manager/approve/member | 팀원 승인 | COMPANY_MANAGER | MemberApprovalDto | ApprovalResponseDto |
 
@@ -136,6 +137,15 @@ Authorization: Bearer {access_token}
 }
 ```
 
+#### ChangePasswordRequestDto
+```typescript
+{
+  current_password: string;
+  new_password: string;
+  confirm_password: string;
+}
+```
+
 ### 응답 DTO
 
 #### UserResponseDto
@@ -174,6 +184,13 @@ Authorization: Bearer {access_token}
   token_type: "Bearer";
   expires_in: 900;           // 15분 (초 단위)
   // refresh_token은 HttpOnly Cookie로 전송
+}
+```
+
+#### PasswordChangeResponseDto
+```typescript
+{
+  message: '비밀번호가 성공적으로 변경되었습니다.'; // ResponseFormatter.success payload
 }
 ```
 
@@ -217,6 +234,7 @@ enum UserStatus {
 | AUTHENTICATION_REQUIRED | 401 | 인증 필요 |
 | FORBIDDEN | 403 | 권한 없음 |
 | ACCOUNT_NOT_ACTIVE | 403 | 계정 비활성 |
+| INVALID_CURRENT_PASSWORD | 400 | 현재 비밀번호 검증 실패 |
 | NOT_FOUND | 404 | 리소스 없음 |
 | VALIDATION_ERROR | 400 | 입력값 검증 실패 |
 | CONFLICT | 409 | 중복 데이터 |
@@ -236,6 +254,10 @@ enum UserStatus {
 2. `/api/v1/auth/refresh` 호출 (Cookie 자동 전송)
 3. 새로운 Access/Refresh Token 쌍 발급
 4. 기존 요청 재시도
+
+### Password Change 보안 처리
+- `/api/v1/auth/password/change` 성공 시 모든 Refresh Token이 즉시 폐기되어 재인증 필요
+- 현재 비밀번호 불일치 시 `INVALID_CURRENT_PASSWORD` (400) 반환
 
 ### Validation
 - 모든 입력값은 Joi 스키마로 검증
