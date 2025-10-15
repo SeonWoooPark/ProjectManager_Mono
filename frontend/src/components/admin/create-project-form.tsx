@@ -1,7 +1,6 @@
 import type { FormEvent } from 'react';
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@components/ui/button';
 import { Input } from '@components/ui/input';
 import { Label } from '@components/ui/label';
@@ -15,8 +14,7 @@ import { ko } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import LoadingSpinner from '@components/atoms/LoadingSpinner';
 import { useCompanyMembers } from '@/services/members/membersQueries';
-import { projectsService } from '@/services/projects/projectsService';
-import { projectsQueryKeys } from '@/services/projects/projectsQueries';
+import { useCreateProject } from '@/services/projects/projectsMutations';
 import { useToast } from '@components/ui/use-toast';
 import { useAuthStore } from '@store/authStore';
 
@@ -39,7 +37,6 @@ export function CreateProjectForm() {
   const [startDateOpen, setStartDateOpen] = useState(false);
   const [endDateOpen, setEndDateOpen] = useState(false);
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const {
@@ -49,33 +46,9 @@ export function CreateProjectForm() {
   } = useCompanyMembers({ status_id: 1, role_id: 3 }); // ACTIVE한 Team Member만
 
   const availableMembers = useMemo(() => membersData?.members ?? [], [membersData?.members]);
-  const currentUser  = useAuthStore((state) => state.user); // 현재 사용자 정보
+  const currentUser = useAuthStore((state) => state.user); // 현재 사용자 정보
 
-  const mutation = useMutation({
-    mutationFn: () => {
-      const memberIds = [...formData.selectedMembers];
-
-      // ✅ 회사 관리자 추가 (중복 방지)
-      if (currentUser?.role_id === 2 && !memberIds.includes(currentUser.id)) {
-        memberIds.unshift(currentUser.id);
-      }
-      return projectsService.createProject({
-        project_name: formData.name,
-        project_description: formData.description,
-        start_date: formData.startDate ? format(formData.startDate, 'yyyy-MM-dd') : '',
-        end_date: formData.endDate ? format(formData.endDate, 'yyyy-MM-dd') : '',
-        member_ids: memberIds,
-      });
-    },
-    onSuccess: () => {
-      toast({ title: '프로젝트가 성공적으로 생성되었습니다.' });
-      queryClient.invalidateQueries({ queryKey: projectsQueryKeys.list(undefined) });
-      navigate('/admin/company/projects');
-    },
-    onError: () => {
-      toast({ title: '프로젝트 생성에 실패했습니다.', variant: 'destructive' });
-    },
-  });
+  const mutation = useCreateProject();
 
   const handleMemberToggle = (memberId: string) => {
     setFormData((prev) => ({
@@ -88,7 +61,32 @@ export function CreateProjectForm() {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    mutation.mutate();
+
+    const memberIds = [...formData.selectedMembers];
+
+    // 회사 관리자 추가 (중복 방지)
+    if (currentUser?.role_id === 2 && !memberIds.includes(currentUser.id)) {
+      memberIds.unshift(currentUser.id);
+    }
+
+    mutation.mutate(
+      {
+        project_name: formData.name,
+        project_description: formData.description,
+        start_date: formData.startDate ? format(formData.startDate, 'yyyy-MM-dd') : '',
+        end_date: formData.endDate ? format(formData.endDate, 'yyyy-MM-dd') : '',
+        member_ids: memberIds,
+      },
+      {
+        onSuccess: () => {
+          toast({ title: '프로젝트가 성공적으로 생성되었습니다.' });
+          navigate('/admin/company/projects');
+        },
+        onError: () => {
+          toast({ title: '프로젝트 생성에 실패했습니다.', variant: 'destructive' });
+        },
+      }
+    );
   };
 
   if (membersLoading) {

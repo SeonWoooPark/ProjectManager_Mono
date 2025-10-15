@@ -19,6 +19,7 @@ interface TaskColumn {
 
 interface ReadOnlyKanbanBoardProps {
   tasks: TaskColumn
+  onTaskClick?: (taskId: string, isMyTask: boolean) => void
 }
 
 const columnConfig = [
@@ -29,7 +30,7 @@ const columnConfig = [
   { key: "cancelled" as keyof TaskColumn, title: "취소", color: "bg-red-100 text-red-800" },
 ]
 
-export function ReadOnlyKanbanBoard({ tasks }: ReadOnlyKanbanBoardProps) {
+export function ReadOnlyKanbanBoard({ tasks, onTaskClick }: ReadOnlyKanbanBoardProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -57,7 +58,8 @@ export function ReadOnlyKanbanBoard({ tasks }: ReadOnlyKanbanBoardProps) {
               {tasks[column.key].map((task) => (
                 <div
                   key={task.id}
-                  className={`p-3 rounded-lg border ${task.isMyTask ? "bg-primary/5 border-primary/20" : "bg-muted"}`}
+                  onClick={() => onTaskClick?.(task.id, task.isMyTask)}
+                  className={`p-3 rounded-lg border cursor-pointer hover:shadow-md transition-shadow ${task.isMyTask ? "bg-primary/5 border-primary/20" : "bg-muted"}`}
                 >
                   <h4 className="text-sm font-medium text-foreground mb-2">{task.title}</h4>
                   <div className="flex items-center gap-2">

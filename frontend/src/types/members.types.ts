@@ -68,3 +68,29 @@ export interface PendingMembersResponse {
   pending_members: PendingMember[];
   total: number;
 }
+
+// ===== Mutations DTOs =====
+
+export interface UpdateMemberStatusDto {
+  userId: string;
+  status_id: 1 | 2; // 1: ACTIVE, 2: INACTIVE
+}
+
+export interface UpdateMemberProfileDto {
+  userId: string;
+  user_name?: string;
+  phone_number?: string;
+  email?: string;
+}
+
+export interface MemberDto {
+  user_id: number;
+  email: string;
+  user_name: string;
+  phone_number: string | null;
+  role_id: number;
+  status_id: number;
+  company_id: number;
+  created_at: string;
+  updated_at: string;
+}

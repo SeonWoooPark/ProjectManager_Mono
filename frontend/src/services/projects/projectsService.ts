@@ -81,4 +81,11 @@ export const projectsService = {
     );
     return response.data.data;
   },
+
+  async deleteProject(projectId: string) {
+    const response = await api.delete<SuccessResponse<{ message: string }>>(
+      `/projects/${projectId}`
+    );
+    return response.data;
+  },
 };

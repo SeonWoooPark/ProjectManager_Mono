@@ -8,6 +8,14 @@ const TASK_STATUS_LABELS: Record<TaskStatusKey, string> = {
   cancelled: '취소',
 };
 
+const TASK_STATUS_KEY_TO_ID: Record<TaskStatusKey, number> = {
+  todo: 1,
+  inProgress: 2,
+  review: 3,
+  completed: 4,
+  cancelled: 5,
+};
+
 const TASK_STATUS_COLOR_CLASSES: Record<TaskStatusKey, string> = {
   todo: 'bg-gray-100 text-gray-800',
   inProgress: 'bg-blue-100 text-blue-800',
@@ -46,6 +54,10 @@ export function taskStatusLabel(status: TaskStatusKey): string {
 
 export function taskStatusBadgeClass(status: TaskStatusKey): string {
   return TASK_STATUS_COLOR_CLASSES[status];
+}
+
+export function toTaskStatusId(statusKey: TaskStatusKey): number {
+  return TASK_STATUS_KEY_TO_ID[statusKey];
 }
 
 const PROJECT_STATUS_LABELS: Record<string, string> = {

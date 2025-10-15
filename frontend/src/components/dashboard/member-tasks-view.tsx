@@ -2,17 +2,18 @@ import { useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@components/ui/card';
 import { Button } from '@components/ui/button';
 import { Badge } from '@components/ui/badge';
+import { Input } from '@components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@components/ui/select';
-import { CheckSquare, Clock, AlertCircle, Calendar, Plus } from 'lucide-react';
+import { CheckSquare, Clock, AlertCircle, Calendar, Plus, Search } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import LoadingSpinner from '@components/atoms/LoadingSpinner';
-import { useAssignedTasks, tasksQueryKeys } from '@/services/tasks/tasksQueries';
-import { useProjects, projectsQueryKeys } from '@/services/projects/projectsQueries';
-import { tasksService } from '@/services/tasks/tasksService';
+import { useAssignedTasks } from '@/services/tasks/tasksQueries';
+import { useProjects } from '@/services/projects/projectsQueries';
+import { useUpdateTask, useUpdateTaskStatus } from '@/services/tasks/tasksMutations';
+import type { TaskSummary } from '@/types/tasks.types';
 import { DEFAULT_TASK_PRIORITY_LABEL, TaskStatusKey, taskStatusBadgeClass, taskStatusLabel, toTaskStatusKey } from '@/utils/status';
-import { useToast } from '@components/ui/use-toast';
 import { TaskCreationDialog } from '@components/admin/task-creation-dialog';
+import { TaskEditDialog } from '@components/dashboard/task-edit-dialog';
 import { useAuthStore } from '@/store/authStore';
 
 interface MemberTaskCardData {
@@ -23,6 +24,7 @@ interface MemberTaskCardData {
   status: TaskStatusKey;
   priority: '높음' | '중간' | '낮음';
   dueDate: string;
+  originalTask: TaskSummary;  // 원본 데이터 저장
 }
 
 const statusConfig: Record<TaskStatusKey, { label: string; color: string; icon: LucideIcon }> = {
@@ -52,31 +54,17 @@ const statusOrder: TaskStatusKey[] = ['todo', 'inProgress', 'review', 'completed
 export function MemberTasksView() {
   const [statusFilter, setStatusFilter] = useState<TaskStatusKey | 'all'>('all');
   const [projectFilter, setProjectFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<TaskSummary | null>(null);
 
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
 
   const { data, isLoading, isError } = useAssignedTasks();
   const { data: projectsData } = useProjects();
 
-  const mutation = useMutation({
-    mutationFn: async ({ taskId, statusKey }: { taskId: string; statusKey: TaskStatusKey }) => {
-      const statusId = statusIdByKey[statusKey];
-      return tasksService.updateStatus(taskId, statusId);
-    },
-    onSuccess: () => {
-      toast({ title: '작업 상태가 업데이트되었습니다.' });
-      // 모든 tasks 관련 쿼리 무효화 (할당된 작업 목록 및 통계 업데이트)
-      queryClient.invalidateQueries({ queryKey: tasksQueryKeys.all });
-      // 모든 projects 관련 쿼리도 무효화 (진행률, 작업 통계 업데이트)
-    queryClient.invalidateQueries({ queryKey: projectsQueryKeys.all });
-    },
-    onError: () => {
-      toast({ title: '작업 상태 변경에 실패했습니다.', variant: 'destructive' });
-    },
-  });
+  const updateTaskMutation = useUpdateTask();
+  const updateStatusMutation = useUpdateTaskStatus();
 
   const tasks: MemberTaskCardData[] = useMemo(() => {
     if (!data?.tasks) return [];
@@ -101,6 +89,7 @@ export function MemberTasksView() {
         status: statusKey,
         priority,
         dueDate: task.end_date || '미정',
+        originalTask: task,  // 원본 데이터 저장
       } satisfies MemberTaskCardData;
     });
   }, [data?.tasks]);
@@ -122,7 +111,10 @@ export function MemberTasksView() {
   const filteredTasks = tasks.filter((task) => {
     const statusMatch = statusFilter === 'all' || task.status === statusFilter;
     const projectMatch = projectFilter === 'all' || task.project === projectFilter;
-    return statusMatch && projectMatch;
+    const searchMatch =
+      searchQuery === '' ||
+      task.title.toLowerCase().includes(searchQuery.toLowerCase());
+    return statusMatch && projectMatch && searchMatch;
   });
 
   // 할당된 프로젝트만 필터링 (member-projects-view.tsx와 동일한 방식)
@@ -142,7 +134,8 @@ export function MemberTasksView() {
   }, [projectsData?.projects, user?.id]);
 
   const handleStatusChange = (taskId: string, newStatus: TaskStatusKey) => {
-    mutation.mutate({ taskId, statusKey: newStatus });
+    const statusId = statusIdByKey[newStatus];
+    updateStatusMutation.mutate({ taskId, statusId });
   };
 
   if (isLoading) {
@@ -192,39 +185,43 @@ export function MemberTasksView() {
       <Card>
         <CardHeader>
           <CardTitle>작업 필터</CardTitle>
-          <CardDescription>상태와 프로젝트로 작업을 필터링하세요</CardDescription>
+          <CardDescription>검색어, 상태, 프로젝트로 작업을 필터링하세요</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <Select value={statusFilter} onValueChange={(value: TaskStatusKey | 'all') => setStatusFilter(value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="상태 선택" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">모든 상태</SelectItem>
-                  <SelectItem value="todo">할 일</SelectItem>
-                  <SelectItem value="inProgress">진행 중</SelectItem>
-                  <SelectItem value="review">검토</SelectItem>
-                  <SelectItem value="completed">완료</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center">
+            <div className="flex items-center gap-2 flex-1">
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="작업 제목 검색..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-            <div className="flex-1">
-              <Select value={projectFilter} onValueChange={setProjectFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="프로젝트 선택" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">모든 프로젝트</SelectItem>
-                  {assignedProjects.map((project) => (
-                    <SelectItem key={project.id} value={project.project_name}>
-                      {project.project_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={statusFilter} onValueChange={(value: TaskStatusKey | 'all') => setStatusFilter(value)}>
+              <SelectTrigger className="w-full md:w-40">
+                <SelectValue placeholder="상태 선택" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">모든 상태</SelectItem>
+                <SelectItem value="todo">할 일</SelectItem>
+                <SelectItem value="inProgress">진행 중</SelectItem>
+                <SelectItem value="review">검토</SelectItem>
+                <SelectItem value="completed">완료</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={projectFilter} onValueChange={setProjectFilter}>
+              <SelectTrigger className="w-full md:w-40">
+                <SelectValue placeholder="프로젝트 선택" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">모든 프로젝트</SelectItem>
+                {assignedProjects.map((project) => (
+                  <SelectItem key={project.id} value={project.project_name}>
+                    {project.project_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
@@ -260,25 +257,35 @@ export function MemberTasksView() {
                     <span>프로젝트: {task.project}</span>
                   </div>
 
-                  {statusKey !== 'completed' && (
-                    <div className="flex gap-2">
-                      {statusKey === 'todo' && (
-                        <Button size="sm" disabled={mutation.isPending} onClick={() => handleStatusChange(task.id, 'inProgress')}>
-                          시작하기
-                        </Button>
-                      )}
-                      {statusKey === 'inProgress' && (
-                        <Button size="sm" disabled={mutation.isPending} onClick={() => handleStatusChange(task.id, 'review')}>
-                          검토 요청
-                        </Button>
-                      )}
-                      {statusKey === 'review' && (
-                        <Button size="sm" variant="outline" className="bg-transparent" disabled>
-                          검토 대기 중
-                        </Button>
-                      )}
-                    </div>
-                  )}
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setEditingTask(task.originalTask)}
+                      disabled={updateTaskMutation.isPending}
+                    >
+                      수정
+                    </Button>
+                    {statusKey !== 'completed' && (
+                      <>
+                        {statusKey === 'todo' && (
+                          <Button size="sm" disabled={updateStatusMutation.isPending} onClick={() => handleStatusChange(task.id, 'inProgress')}>
+                            시작하기
+                          </Button>
+                        )}
+                        {statusKey === 'inProgress' && (
+                          <Button size="sm" disabled={updateStatusMutation.isPending} onClick={() => handleStatusChange(task.id, 'review')}>
+                            검토 요청
+                          </Button>
+                        )}
+                        {statusKey === 'review' && (
+                          <Button size="sm" variant="outline" className="bg-transparent" disabled>
+                            검토 대기 중
+                          </Button>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -312,6 +319,19 @@ export function MemberTasksView() {
           role: 'TEAM_MEMBER',
         }}
       />
+
+      {/* 작업 수정 다이얼로그 */}
+      {editingTask && (
+        <TaskEditDialog
+          isOpen={!!editingTask}
+          onClose={() => setEditingTask(null)}
+          task={editingTask}
+          onSubmit={(taskId, data) => 
+            updateTaskMutation.mutate({ taskId, data })
+          }
+          isLoading={updateTaskMutation.isPending}
+        />
+      )}
     </div>
   );
 }

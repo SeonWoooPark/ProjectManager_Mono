@@ -1,11 +1,18 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@components/ui/card';
 import { Badge } from '@components/ui/badge';
+import { Button } from '@components/ui/button';
 import { Avatar, AvatarFallback } from '@components/ui/avatar';
+import { Input } from '@components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@components/ui/select';
 import { ReadOnlyKanbanBoard } from '@components/dashboard/read-only-kanban-board';
+import { DraggableKanbanBoard } from '@components/dashboard/draggable-kanban-board';
 import { ProjectSettingsForm } from './ProjectSettingsForm';
-import { CheckSquare, Users, Activity, LayoutGrid, Settings } from 'lucide-react';
+import { CheckSquare, Users, Activity, LayoutGrid, Settings, Search } from 'lucide-react';
 import { taskStatusBadgeClass, taskStatusLabel, TaskStatusKey } from '@/utils/status';
+import { useState } from 'react';
+import { TaskEditDialog } from '@components/dashboard/task-edit-dialog';
+import type { UpdateTaskDto } from '@/types/tasks.types';
 
 interface ProjectTabTask {
   id: string;
@@ -50,6 +57,16 @@ interface ProjectTabsProps {
   userRole?: 'TEAM_MEMBER' | 'COMPANY_MANAGER';
   project?: any;
   projectMembers?: any[];
+  onTaskStatusChange?: (taskId: string, newStatus: TaskStatusKey) => Promise<void>;
+  fullTasks?: {
+    id: string;
+    task_name: string;
+    task_description: string | null;
+    start_date: string | null;
+    end_date: string | null;
+    progress_rate: number;
+  }[];
+  onTaskUpdate?: (taskId: string, data: UpdateTaskDto) => Promise<void>;
 }
 
 export function ProjectTabs({
@@ -62,7 +79,65 @@ export function ProjectTabs({
   userRole = 'TEAM_MEMBER',
   project,
   projectMembers = [],
+  onTaskStatusChange,
+  fullTasks = [],
+  onTaskUpdate,
 }: ProjectTabsProps) {
+  const [selectedStatus, setSelectedStatus] = useState<TaskStatusKey | 'all'>('all');
+  const [selectedAssignee, setSelectedAssignee] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
+  const [isReadOnly, setIsReadOnly] = useState(false);
+
+  // 담당자 목록 생성 (관리자 + 팀원)
+  const assignees = [manager, ...team.map(member => member.name)];
+
+  // 필터링된 작업 목록
+  const filteredTasks = tasks.filter(task => {
+    const statusMatch = selectedStatus === 'all' || task.statusKey === selectedStatus;
+    const assigneeMatch = selectedAssignee === 'all' || task.assignee === selectedAssignee;
+    const searchMatch =
+      searchQuery === '' ||
+      task.title.toLowerCase().includes(searchQuery.toLowerCase());
+    return statusMatch && assigneeMatch && searchMatch;
+  });
+
+  // 각 상태별 작업 개수
+  const statusCounts = {
+    all: tasks.length,
+    todo: tasks.filter(t => t.statusKey === 'todo').length,
+    inProgress: tasks.filter(t => t.statusKey === 'inProgress').length,
+    review: tasks.filter(t => t.statusKey === 'review').length,
+    completed: tasks.filter(t => t.statusKey === 'completed').length,
+    cancelled: tasks.filter(t => t.statusKey === 'cancelled').length,
+  };
+
+  // 작업 클릭 핸들러
+  const handleTaskClick = (taskId: string, isMyTask?: boolean) => {
+    setSelectedTaskId(taskId);
+    // 관리자는 모든 작업 수정 가능, 팀원은 본인 작업만 수정 가능
+    if (userRole === 'COMPANY_MANAGER') {
+      setIsReadOnly(false);
+    } else {
+      setIsReadOnly(!isMyTask);
+    }
+    setIsTaskDialogOpen(true);
+  };
+
+  // 선택된 작업 찾기
+  const selectedTask = selectedTaskId
+    ? fullTasks.find(t => t.id === selectedTaskId)
+    : null;
+
+  // 작업 수정 핸들러
+  const handleTaskUpdate = async (taskId: string, data: UpdateTaskDto) => {
+    if (onTaskUpdate) {
+      await onTaskUpdate(taskId, data);
+    }
+    setIsTaskDialogOpen(false);
+  };
+
   return (
     <Tabs defaultValue="kanban" className="space-y-4">
       <TabsList className="bg-white text-black">
@@ -105,18 +180,74 @@ export function ProjectTabs({
       </TabsList>
 
       <TabsContent value="kanban">
-        <ReadOnlyKanbanBoard tasks={kanbanTasks} />
+        {userRole === 'COMPANY_MANAGER' ? (
+          <DraggableKanbanBoard
+            tasks={kanbanTasks}
+            onTaskStatusChange={onTaskStatusChange}
+            onTaskClick={handleTaskClick}
+          />
+        ) : (
+          <ReadOnlyKanbanBoard
+            tasks={kanbanTasks}
+            onTaskClick={handleTaskClick}
+          />
+        )}
       </TabsContent>
 
-      <TabsContent value="tasks">
+      <TabsContent value="tasks" className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>작업 필터</CardTitle>
+            <CardDescription>검색어, 상태, 담당자로 작업을 필터링하세요</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col gap-4 md:flex-row md:items-center">
+              <div className="flex items-center gap-2 flex-1">
+                <Search className="h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="작업 제목 검색..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <Select value={selectedStatus} onValueChange={(value) => setSelectedStatus(value as TaskStatusKey | 'all')}>
+                <SelectTrigger className="w-full md:w-40">
+                  <SelectValue placeholder="상태 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">전체 상태 ({statusCounts.all})</SelectItem>
+                  <SelectItem value="todo">할 일 ({statusCounts.todo})</SelectItem>
+                  <SelectItem value="inProgress">진행 중 ({statusCounts.inProgress})</SelectItem>
+                  <SelectItem value="review">검토 중 ({statusCounts.review})</SelectItem>
+                  <SelectItem value="completed">완료 ({statusCounts.completed})</SelectItem>
+                  <SelectItem value="cancelled">취소 ({statusCounts.cancelled})</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={selectedAssignee} onValueChange={setSelectedAssignee}>
+                <SelectTrigger className="w-full md:w-40">
+                  <SelectValue placeholder="담당자 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">전체 담당자</SelectItem>
+                  {assignees.map((assignee) => (
+                    <SelectItem key={assignee} value={assignee}>
+                      {assignee}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>작업 목록</CardTitle>
-            <CardDescription>프로젝트에 할당된 모든 작업을 확인하세요</CardDescription>
+            <CardDescription>프로젝트에 할당된 작업을 확인하세요</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {tasks.map((task) => (
+              {filteredTasks.map((task) => (
                 <div
                   key={task.id}
                   className="border rounded-lg p-4 hover:bg-accent/50 transition-colors"
@@ -148,17 +279,66 @@ export function ProjectTabs({
                         <span className="text-xs text-muted-foreground">마감: {task.dueDate}</span>
                       </div>
                     </div>
-                    {task.assignee === currentUser && (
-                      <Badge variant="outline" className="ml-4">
-                        내 작업
-                      </Badge>
-                    )}
+
+                    {/* 오른쪽 버튼 영역 */}
+                    <div className="flex items-center gap-2 ml-4">
+                      {task.assignee === currentUser && (
+                        <Badge variant="outline">내 작업</Badge>
+                      )}
+
+                      {/* 회사 관리자: 검토 중인 작업 검토 완료 */}
+                      {userRole === 'COMPANY_MANAGER' && task.statusKey === 'review' && (
+                        <Button
+                          size="sm"
+                          onClick={() => onTaskStatusChange?.(task.id, 'completed')}
+                          className="h-8"
+                        >
+                          검토 완료
+                        </Button>
+                      )}
+
+                      {/* 팀원: 내 작업의 상태 변경 */}
+                      {userRole === 'TEAM_MEMBER' && task.isMyTask && task.statusKey !== 'completed' && task.statusKey !== 'cancelled' && (
+                        <>
+                          {task.statusKey === 'todo' && (
+                            <Button
+                              size="sm"
+                              onClick={() => onTaskStatusChange?.(task.id, 'inProgress')}
+                              className="h-8"
+                            >
+                              시작하기
+                            </Button>
+                          )}
+                          {task.statusKey === 'inProgress' && (
+                            <Button
+                              size="sm"
+                              onClick={() => onTaskStatusChange?.(task.id, 'review')}
+                              className="h-8"
+                            >
+                              검토 요청
+                            </Button>
+                          )}
+                          {task.statusKey === 'review' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="bg-transparent h-8"
+                              disabled
+                            >
+                              검토 대기 중
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
-              {tasks.length === 0 && (
+              {filteredTasks.length === 0 && (
                 <div className="text-center text-muted-foreground py-10">
-                  등록된 작업이 없습니다.
+                  {selectedStatus === 'all' && selectedAssignee === 'all'
+                    ? '등록된 작업이 없습니다.'
+                    : '선택한 조건에 맞는 작업이 없습니다.'}
                 </div>
               )}
             </div>
@@ -254,6 +434,17 @@ export function ProjectTabs({
         <TabsContent value="settings" className="flex-none">
           <ProjectSettingsForm project={project} currentMembers={projectMembers} />
         </TabsContent>
+      )}
+
+      {/* 작업 수정/상세 다이얼로그 */}
+      {selectedTask && (
+        <TaskEditDialog
+          isOpen={isTaskDialogOpen}
+          onClose={() => setIsTaskDialogOpen(false)}
+          task={selectedTask}
+          onSubmit={handleTaskUpdate}
+          readOnly={isReadOnly}
+        />
       )}
     </Tabs>
   );

@@ -52,3 +52,27 @@ export interface TaskDto {
   created_at: string;
   updated_at: string;
 }
+
+// 작업 수정 요청 DTO
+export interface UpdateTaskDto {
+  task_name?: string;
+  task_description?: string;
+  end_date?: string;           // ISO 8601 (start_date 수정 불가)
+  progress_rate?: number;      // 0-100
+  assignee_id?: string;
+}
+
+// 작업 수정 응답 DTO
+export interface UpdatedTaskDto {
+  id: string;
+  task_name: string;
+  task_description: string | null;
+  project_id: string;
+  assignee_id: string | null;
+  assignee_name: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  progress_rate: number;
+  status_id: number | null;
+  updated_at: string;
+}
