@@ -10,6 +10,8 @@ import { ProjectSettingsForm } from './ProjectSettingsForm';
 import { CheckSquare, Users, Activity, LayoutGrid, Settings } from 'lucide-react';
 import { taskStatusBadgeClass, taskStatusLabel, TaskStatusKey } from '@/utils/status';
 import { useState } from 'react';
+import { TaskEditDialog } from '@components/dashboard/task-edit-dialog';
+import type { UpdateTaskDto } from '@/types/tasks.types';
 
 interface ProjectTabTask {
   id: string;
@@ -55,6 +57,15 @@ interface ProjectTabsProps {
   project?: any;
   projectMembers?: any[];
   onTaskStatusChange?: (taskId: string, newStatus: TaskStatusKey) => Promise<void>;
+  fullTasks?: {
+    id: string;
+    task_name: string;
+    task_description: string | null;
+    start_date: string | null;
+    end_date: string | null;
+    progress_rate: number;
+  }[];
+  onTaskUpdate?: (taskId: string, data: UpdateTaskDto) => Promise<void>;
 }
 
 export function ProjectTabs({
@@ -68,8 +79,13 @@ export function ProjectTabs({
   project,
   projectMembers = [],
   onTaskStatusChange,
+  fullTasks = [],
+  onTaskUpdate,
 }: ProjectTabsProps) {
   const [selectedStatus, setSelectedStatus] = useState<TaskStatusKey | 'all'>('all');
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
+  const [isReadOnly, setIsReadOnly] = useState(false);
 
   // 필터링된 작업 목록
   const filteredTasks = selectedStatus === 'all'
@@ -84,6 +100,31 @@ export function ProjectTabs({
     review: tasks.filter(t => t.statusKey === 'review').length,
     completed: tasks.filter(t => t.statusKey === 'completed').length,
     cancelled: tasks.filter(t => t.statusKey === 'cancelled').length,
+  };
+
+  // 작업 클릭 핸들러
+  const handleTaskClick = (taskId: string, isMyTask?: boolean) => {
+    setSelectedTaskId(taskId);
+    // 관리자는 모든 작업 수정 가능, 팀원은 본인 작업만 수정 가능
+    if (userRole === 'COMPANY_MANAGER') {
+      setIsReadOnly(false);
+    } else {
+      setIsReadOnly(!isMyTask);
+    }
+    setIsTaskDialogOpen(true);
+  };
+
+  // 선택된 작업 찾기
+  const selectedTask = selectedTaskId
+    ? fullTasks.find(t => t.id === selectedTaskId)
+    : null;
+
+  // 작업 수정 핸들러
+  const handleTaskUpdate = async (taskId: string, data: UpdateTaskDto) => {
+    if (onTaskUpdate) {
+      await onTaskUpdate(taskId, data);
+    }
+    setIsTaskDialogOpen(false);
   };
 
   return (
@@ -129,9 +170,16 @@ export function ProjectTabs({
 
       <TabsContent value="kanban">
         {userRole === 'COMPANY_MANAGER' ? (
-          <DraggableKanbanBoard tasks={kanbanTasks} onTaskStatusChange={onTaskStatusChange} />
+          <DraggableKanbanBoard
+            tasks={kanbanTasks}
+            onTaskStatusChange={onTaskStatusChange}
+            onTaskClick={handleTaskClick}
+          />
         ) : (
-          <ReadOnlyKanbanBoard tasks={kanbanTasks} />
+          <ReadOnlyKanbanBoard
+            tasks={kanbanTasks}
+            onTaskClick={handleTaskClick}
+          />
         )}
       </TabsContent>
 
@@ -313,6 +361,17 @@ export function ProjectTabs({
         <TabsContent value="settings" className="flex-none">
           <ProjectSettingsForm project={project} currentMembers={projectMembers} />
         </TabsContent>
+      )}
+
+      {/* 작업 수정/상세 다이얼로그 */}
+      {selectedTask && (
+        <TaskEditDialog
+          isOpen={isTaskDialogOpen}
+          onClose={() => setIsTaskDialogOpen(false)}
+          task={selectedTask}
+          onSubmit={handleTaskUpdate}
+          readOnly={isReadOnly}
+        />
       )}
     </Tabs>
   );

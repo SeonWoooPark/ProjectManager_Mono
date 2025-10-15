@@ -35,6 +35,7 @@ interface TaskColumn {
 interface DraggableKanbanBoardProps {
   tasks: TaskColumn;
   onTaskStatusChange?: (taskId: string, newStatus: TaskStatusKey) => Promise<void>;
+  onTaskClick?: (taskId: string) => void;
 }
 
 const columnConfig = [
@@ -47,9 +48,10 @@ const columnConfig = [
 
 interface DraggableTaskCardProps {
   task: Task;
+  onTaskClick?: (taskId: string) => void;
 }
 
-function DraggableTaskCard({ task }: DraggableTaskCardProps) {
+function DraggableTaskCard({ task, onTaskClick }: DraggableTaskCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
   });
@@ -60,13 +62,21 @@ function DraggableTaskCard({ task }: DraggableTaskCardProps) {
     opacity: isDragging ? 0.5 : 1,
   };
 
+  const handleClick = () => {
+    // 드래그 중이 아닐 때만 클릭 이벤트 처리
+    if (!isDragging && onTaskClick) {
+      onTaskClick(task.id);
+    }
+  };
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       {...attributes}
       {...listeners}
-      className={`p-3 rounded-lg border cursor-move ${
+      onClick={handleClick}
+      className={`p-3 rounded-lg border cursor-pointer hover:shadow-md transition-shadow ${
         task.isMyTask ? 'bg-primary/5 border-primary/20' : 'bg-muted'
       } ${isDragging ? 'shadow-lg' : ''}`}
     >
@@ -89,9 +99,10 @@ function DraggableTaskCard({ task }: DraggableTaskCardProps) {
 interface DroppableColumnProps {
   column: typeof columnConfig[0];
   tasks: Task[];
+  onTaskClick?: (taskId: string) => void;
 }
 
-function DroppableColumn({ column, tasks }: DroppableColumnProps) {
+function DroppableColumn({ column, tasks, onTaskClick }: DroppableColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: column.key,
     data: {
@@ -113,7 +124,7 @@ function DroppableColumn({ column, tasks }: DroppableColumnProps) {
         <div ref={setNodeRef} className="space-y-3 min-h-[200px]">
           <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
             {tasks.map((task) => (
-              <DraggableTaskCard key={task.id} task={task} />
+              <DraggableTaskCard key={task.id} task={task} onTaskClick={onTaskClick} />
             ))}
           </SortableContext>
           {tasks.length === 0 && (
@@ -125,7 +136,7 @@ function DroppableColumn({ column, tasks }: DroppableColumnProps) {
   );
 }
 
-export function DraggableKanbanBoard({ tasks, onTaskStatusChange }: DraggableKanbanBoardProps) {
+export function DraggableKanbanBoard({ tasks, onTaskStatusChange, onTaskClick }: DraggableKanbanBoardProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
   const sensors = useSensors(
@@ -215,7 +226,7 @@ export function DraggableKanbanBoard({ tasks, onTaskStatusChange }: DraggableKan
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           {columnConfig.map((column) => (
-            <DroppableColumn key={column.key} column={column} tasks={tasks[column.key]} />
+            <DroppableColumn key={column.key} column={column} tasks={tasks[column.key]} onTaskClick={onTaskClick} />
           ))}
         </div>
 

@@ -14,12 +14,16 @@ import { useState, useEffect } from 'react';
 import type { TaskSummary } from '@/types/tasks.types';
 import type { UpdateTaskDto } from '@/types/tasks.types';
 
+// TaskSummary와 호환 가능한 최소 필드 타입
+type TaskEditData = Pick<TaskSummary, 'id' | 'task_name' | 'task_description' | 'start_date' | 'end_date' | 'progress_rate'>;
+
 interface TaskEditDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  task: TaskSummary;
+  task: TaskEditData;
   onSubmit: (taskId: string, data: UpdateTaskDto) => void;
   isLoading?: boolean;
+  readOnly?: boolean;
 }
 
 export function TaskEditDialog({
@@ -27,7 +31,8 @@ export function TaskEditDialog({
   onClose,
   task,
   onSubmit,
-  isLoading
+  isLoading,
+  readOnly = false
 }: TaskEditDialogProps) {
   const [formData, setFormData] = useState({
     task_name: task.task_name,
@@ -87,8 +92,10 @@ export function TaskEditDialog({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>작업 수정</DialogTitle>
-          <DialogDescription>프로젝트에 배정된 작업을 수정합니다</DialogDescription>
+          <DialogTitle>{readOnly ? '작업 상세 정보' : '작업 수정'}</DialogTitle>
+          <DialogDescription>
+            {readOnly ? '프로젝트에 배정된 작업의 상세 정보입니다' : '프로젝트에 배정된 작업을 수정합니다'}
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* 작업명 */}
@@ -101,6 +108,7 @@ export function TaskEditDialog({
               value={formData.task_name}
               onChange={(e) => setFormData({ ...formData, task_name: e.target.value })}
               required
+              disabled={readOnly}
             />
           </div>
 
@@ -113,6 +121,7 @@ export function TaskEditDialog({
               onChange={(e) => setFormData({ ...formData, task_description: e.target.value })}
               rows={3}
               placeholder="작업에 대한 상세 설명을 입력하세요"
+              disabled={readOnly}
             />
           </div>
 
@@ -150,6 +159,7 @@ export function TaskEditDialog({
                         'w-full justify-start text-left font-normal bg-transparent',
                         !formData.end_date && 'text-muted-foreground'
                       )}
+                      disabled={readOnly}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {formData.end_date
@@ -195,23 +205,37 @@ export function TaskEditDialog({
                 })
               }
               className="w-full"
+              disabled={readOnly}
             />
           </div>
 
           {/* 버튼 */}
           <div className="flex gap-3 pt-4">
-            <Button type="submit" className="flex-1" disabled={isLoading}>
-              {isLoading ? '수정 중...' : '수정'}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="bg-transparent"
-              disabled={isLoading}
-            >
-              취소
-            </Button>
+            {readOnly ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="flex-1 bg-transparent"
+              >
+                닫기
+              </Button>
+            ) : (
+              <>
+                <Button type="submit" className="flex-1" disabled={isLoading}>
+                  {isLoading ? '수정 중...' : '수정'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onClose}
+                  className="bg-transparent"
+                  disabled={isLoading}
+                >
+                  취소
+                </Button>
+              </>
+            )}
           </div>
         </form>
       </DialogContent>

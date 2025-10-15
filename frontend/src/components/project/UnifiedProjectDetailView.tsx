@@ -12,7 +12,8 @@ import {
   useProjectMembers,
   useProjectTasks,
 } from '@/services/projects/projectsQueries';
-import { useUpdateTaskStatus } from '@/services/tasks/tasksMutations';
+import { useUpdateTaskStatus, useUpdateTask } from '@/services/tasks/tasksMutations';
+import type { UpdateTaskDto } from '@/types/tasks.types';
 import { useAuthStore } from '@/store/authStore';
 import {
   projectStatusLabel,
@@ -69,6 +70,9 @@ export function UnifiedProjectDetailView({
 
   // 작업 상태 변경 mutation
   const updateTaskStatus = useUpdateTaskStatus();
+
+  // 작업 수정 mutation
+  const updateTask = useUpdateTask();
 
   const {
     data: project,
@@ -225,6 +229,15 @@ export function UnifiedProjectDetailView({
     }
   };
 
+  // 작업 수정 핸들러
+  const handleTaskUpdate = async (taskId: string, data: UpdateTaskDto) => {
+    try {
+      await updateTask.mutateAsync({ taskId, data });
+    } catch (error) {
+      console.error('작업 수정 실패:', error);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <ProjectHeader
@@ -262,6 +275,8 @@ export function UnifiedProjectDetailView({
         project={project}
         projectMembers={projectMembers}
         onTaskStatusChange={handleTaskStatusChange}
+        fullTasks={tasks}
+        onTaskUpdate={handleTaskUpdate}
       />
 
       {/* 작업 생성 다이얼로그 */}
