@@ -2,9 +2,7 @@ import { Response, NextFunction } from 'express';
 import { AuthenticatedRequest, UserRole } from '../interfaces/auth.types';
 import { jwtManager } from '../utils/jwt';
 
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@infrastructure/database/prisma.service';
 
 // Verify JWT token middleware
 export const authenticateToken = async (

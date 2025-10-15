@@ -87,7 +87,6 @@ export class ProjectsModule {
       '/:project_id/tasks',
       authenticateToken,
       requireActiveUser,
-      requireCompanyManager,
       ProjectsValidator.validateCreateTaskInProject(),
       (req, res, next) => resolve<ProjectsController>('ProjectsController').createTaskInProject(req, res, next)
     );
