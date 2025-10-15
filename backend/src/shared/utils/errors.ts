@@ -147,6 +147,16 @@ export class PasswordMismatchError extends ApiError {
   }
 }
 
+export class InvalidCurrentPasswordError extends ApiError {
+  constructor() {
+    super(
+      400,
+      '현재 비밀번호가 올바르지 않습니다',
+      'INVALID_CURRENT_PASSWORD'
+    );
+  }
+}
+
 export class InvalidCredentialsError extends ApiError {
   constructor() {
     super(401, '이메일 또는 비밀번호가 일치하지 않습니다', 'INVALID_CREDENTIALS');

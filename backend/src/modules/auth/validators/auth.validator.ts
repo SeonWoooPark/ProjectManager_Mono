@@ -54,6 +54,16 @@ export class AuthValidator {
   }
 
   /**
+   * 비밀번호 변경 validation 미들웨어
+   */
+  static validateChangePassword() {
+    return [
+      BaseValidator.validate(AuthSchemas.changePasswordSchema),
+      AuthValidator.validatePasswordConfirmation()
+    ];
+  }
+
+  /**
    * 회사 승인 validation 미들웨어
    */
   static validateCompanyApproval() {

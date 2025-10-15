@@ -79,6 +79,17 @@ export class AuthSchemas {
   }
 
   /**
+   * 비밀번호 변경 스키마 (인증된 사용자)
+   */
+  static get changePasswordSchema(): ValidationChain[] {
+    return [
+      BaseValidator.passwordRule('current_password'),
+      BaseValidator.passwordRule('new_password'),
+      BaseValidator.passwordRule('confirm_password')
+    ];
+  }
+
+  /**
    * 회사 승인 스키마
    */
   static get companyApprovalSchema(): ValidationChain[] {

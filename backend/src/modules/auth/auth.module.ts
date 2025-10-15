@@ -96,6 +96,13 @@ export class AuthModule {
       (req: AuthenticatedRequest, res: Response, next: NextFunction) =>
         resolve<AuthController>('AuthController').resetPassword(req, res, next)
     );
+    this._router.post(
+      '/password/change',
+      authenticateToken,
+      AuthValidator.validateChangePassword(),
+      (req: AuthenticatedRequest, res: Response, next: NextFunction) =>
+        resolve<AuthController>('AuthController').changePassword(req, res, next)
+    );
 
     // 보호된 엔드포인트 (인증 필요)
     this._router.post(
@@ -156,6 +163,7 @@ export class AuthModule {
           'POST /password/reset'
         ],
         protected: [
+          'POST /password/change',
           'POST /logout',
           'POST /admin/approve/company',
           'POST /manager/approve/member'
