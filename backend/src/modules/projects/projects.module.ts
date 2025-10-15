@@ -82,6 +82,16 @@ export class ProjectsModule {
       (req, res, next) => resolve<ProjectsController>('ProjectsController').updateProject(req, res, next)
     );
 
+    // DELETE /api/v1/projects/:project_id - delete project (manager only)
+    this._router.delete(
+      '/:project_id',
+      authenticateToken,
+      requireActiveUser,
+      requireCompanyManager,
+      ProjectsValidator.validateProjectIdParam(),
+      (req, res, next) => resolve<ProjectsController>('ProjectsController').deleteProject(req, res, next)
+    );
+
     // POST /api/v1/projects/:project_id/tasks - create task under project (manager only)
     this._router.post(
       '/:project_id/tasks',

@@ -74,6 +74,7 @@ Authorization: Bearer {access_token}
 | GET | /:project_id/tasks | 프로젝트 작업 목록 | ALL | Query: status_id, assignee_id | TaskListDto |
 | GET | /:project_id/members | 프로젝트 멤버 | ALL | - | MemberListDto |
 | PATCH | /:project_id | 프로젝트 수정 | COMPANY_MANAGER | UpdateProjectDto | ProjectDto |
+| DELETE | /:project_id | 프로젝트 삭제 | COMPANY_MANAGER | - | { message: string } |
 | POST | /:project_id/tasks | 작업 생성 | COMPANY_MANAGER | CreateTaskDto | TaskDto |
 
 ### Tasks Module (/api/v1/tasks)

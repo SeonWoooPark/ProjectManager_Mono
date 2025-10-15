@@ -427,4 +427,21 @@ export class ProjectsRepository {
       total_members: enriched.length,
     };
   }
+
+  async deleteProject(
+    user: { id: string; role_id: number; company_id: string | null },
+    projectId: string
+  ) {
+    // 1. 프로젝트 접근 권한 확인 (기존 메서드 활용)
+    await this.assertProjectAccess(user, projectId);
+
+    // 2. Hard Delete 수행
+    // Prisma Cascade로 자동 삭제:
+    // - allocate_projects
+    // - tasks (및 하위 reviews)
+    // - activity_logs
+    await prisma.project.delete({
+      where: { id: projectId }
+    });
+  }
 }
