@@ -30,6 +30,7 @@ export class TasksRepository {
       task_description: t.task_description,
       project_id: t.project_id,
       project_name: t.project.project_name,
+      assignee_id: t.assignee_id,
       status_id: t.status_id || null,
       status_name: t.status?.status_name || null,
       start_date: t.start_date ? t.start_date.toISOString().slice(0, 10) : null,
@@ -50,7 +51,11 @@ export class TasksRepository {
       else if (name === 'Completed') stats.completed++;
     }
 
-    return { tasks: data, statistics: stats };
+    return { 
+      tasks: data, 
+      total: data.length,
+      statistics: stats 
+    };
   }
 
   async changeStatus(

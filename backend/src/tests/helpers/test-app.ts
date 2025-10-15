@@ -9,6 +9,9 @@ import { notFoundHandler } from '@shared/middleware/notFoundHandler';
 import { rateLimiter } from '@shared/middleware/rateLimiter';
 import { requestLogger } from '@shared/middleware/requestLogger';
 import { AuthModule } from '@modules/auth';
+import { MembersModule } from '@modules/members';
+import { ProjectsModule } from '@modules/projects';
+import { TasksModule } from '@modules/tasks';
 import { config } from '@core/config';
 import { initializeApp } from '@core/app.bootstrap';
 import { prismaService } from '@infrastructure/database/prisma.service';
@@ -58,6 +61,36 @@ export async function createTestApp(): Promise<Application> {
     logger.info('✅ Auth module routes registered');
   } catch (error) {
     logger.error('❌ Auth 모듈 초기화 실패:', error);
+    throw error;
+  }
+
+  // Members 모듈 초기화
+  try {
+    const membersModule = MembersModule.getInstance();
+    app.use('/api/v1/members', membersModule.router);
+    logger.info('✅ Members module routes registered');
+  } catch (error) {
+    logger.error('❌ Members 모듈 초기화 실패:', error);
+    throw error;
+  }
+
+  // Projects 모듈 초기화
+  try {
+    const projectsModule = ProjectsModule.getInstance();
+    app.use('/api/v1/projects', projectsModule.router);
+    logger.info('✅ Projects module routes registered');
+  } catch (error) {
+    logger.error('❌ Projects 모듈 초기화 실패:', error);
+    throw error;
+  }
+
+  // Tasks 모듈 초기화
+  try {
+    const tasksModule = TasksModule.getInstance();
+    app.use('/api/v1/tasks', tasksModule.router);
+    logger.info('✅ Tasks module routes registered');
+  } catch (error) {
+    logger.error('❌ Tasks 모듈 초기화 실패:', error);
     throw error;
   }
 

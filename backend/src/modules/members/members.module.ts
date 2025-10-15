@@ -39,5 +39,14 @@ export class MembersModule {
       requireCompanyManager,
       (req, res, next) => resolve<MembersController>('MembersController').listPendingMembers(req, res, next)
     );
+
+    // GET /api/v1/members/projects/:project_id - moved from app.ts
+    this._router.get(
+      '/projects/:project_id',
+      authenticateToken,
+      requireActiveUser,
+      MembersValidator.validateGetProjectMembers(),
+      (req, res, next) => resolve<MembersController>('MembersController').getProjectMembers(req, res, next)
+    );
   }
 }

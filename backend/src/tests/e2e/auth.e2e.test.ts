@@ -220,7 +220,7 @@ describe('Auth API E2E Tests - API 선후 관계 테스트', () => {
         // 같은 토큰으로 다시 시도 (실패 예상)
         try {
           await testHelper.refreshToken(oldToken);
-          fail('토큰 재사용이 차단되지 않음');
+          throw new Error('$1');
         } catch (error: any) {
           expect(error.message).toContain('토큰 갱신 실패');
         }
@@ -253,7 +253,7 @@ describe('Auth API E2E Tests - API 선후 관계 테스트', () => {
         // Refresh Token도 사용 불가
         try {
           await testHelper.refreshToken(refreshCookie || '');
-          fail('Refresh Token이 무효화되지 않음');
+          throw new Error('$1');
         } catch (error: any) {
           expect(error.message).toContain('토큰 갱신 실패');
         }
@@ -462,7 +462,7 @@ describe('Auth API E2E Tests - API 선후 관계 테스트', () => {
           'approved@test.com', // 이미 존재하는 이메일
           'SecurePass123!'
         );
-        fail('중복 이메일로 회원가입이 허용됨');
+        throw new Error('$1');
       } catch (error: any) {
         expect(error.message).toContain('회사 관리자 회원가입 실패');
         // API를 통한 직접 확인
@@ -490,7 +490,7 @@ describe('Auth API E2E Tests - API 선후 관계 테스트', () => {
           'unique@test.com',
           'SecurePass123!'
         );
-        fail('중복 회사명으로 회원가입이 허용됨');
+        throw new Error('$1');
       } catch (error: any) {
         expect(error.message).toContain('회사 관리자 회원가입 실패');
         // API를 통한 직접 확인

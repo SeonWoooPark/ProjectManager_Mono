@@ -10,7 +10,7 @@ export class ProjectsRepository {
 
   async createProject(
     companyId: string,
-    creatorId: string,
+    _creatorId: string,
     data: {
       project_name: string;
       project_description: string | null;
@@ -93,8 +93,12 @@ export class ProjectsRepository {
         where,
         include: {
           status: true,
-          tasks: { include: { status: true }, select: { id: true, status_id: true, status: true } },
-          allocatedProjects: { include: { user: true } },
+          tasks: { 
+            include: { status: true }
+          },
+          allocatedProjects: { 
+            include: { user: true }
+          },
         },
         orderBy: { created_at: 'desc' },
         skip: (args.page - 1) * args.limit,
@@ -105,7 +109,7 @@ export class ProjectsRepository {
     const projects = await Promise.all(
       rows.map(async (p) => {
         const totalTasks = p.tasks.length;
-        const completedTasks = p.tasks.filter((t: any) => t.status?.status_name === 'Completed').length;
+        const completedTasks = p.tasks.filter((t: any) => t.status?.status_name === 'DONE').length;
         const incompleteTasks = totalTasks - completedTasks;
 
         const members = p.allocatedProjects.map((ap: any) => ({
@@ -133,6 +137,10 @@ export class ProjectsRepository {
 
     return {
       projects,
+      total,
+      page: args.page,
+      limit: args.limit,
+      total_pages: Math.max(1, Math.ceil(total / args.limit)),
       pagination: {
         total,
         page: args.page,
@@ -153,7 +161,7 @@ export class ProjectsRepository {
   }
 
   async getProjectDetail(user: { id: string; role_id: number; company_id: string | null }, projectId: string) {
-    const project = await this.assertProjectAccess(user, projectId);
+    await this.assertProjectAccess(user, projectId);
 
     const p = await prisma.project.findUnique({
       where: { id: projectId },
@@ -174,14 +182,14 @@ export class ProjectsRepository {
 
     const statistics = {
       total_tasks: p.tasks.length,
-      completed_tasks: statMap['Completed'] || 0,
-      in_progress_tasks: statMap['In Progress'] || 0,
-      todo_tasks: statMap['Todo'] || 0,
-      review_tasks: statMap['Review'] || 0,
-      cancelled_tasks: statMap['Cancelled'] || 0,
+      completed_tasks: statMap['DONE'] || 0,
+      in_progress_tasks: statMap['IN_PROGRESS'] || 0,
+      todo_tasks: statMap['TODO'] || 0,
+      review_tasks: statMap['IN_REVIEW'] || 0,
+      cancelled_tasks: statMap['CANCELLED'] || 0,
     };
 
-    return {
+    const projectData = {
       id: p.id,
       project_name: p.project_name,
       project_description: p.project_description,
@@ -201,6 +209,11 @@ export class ProjectsRepository {
         role_name: ap.user.role.role_name,
         allocated_at: ap.allocated_at.toISOString(),
       })),
+    };
+
+    return {
+      project: projectData,
+      ...projectData // 하위 호환성을 위해 직접 필드도 유지
     };
   }
 
@@ -254,7 +267,7 @@ export class ProjectsRepository {
     projectId: string,
     body: any
   ) {
-    const project = await this.assertProjectAccess(user, projectId);
+    await this.assertProjectAccess(user, projectId);
 
     const updated = await prisma.$transaction(async (tx) => {
       const upd = await tx.project.update({
@@ -276,7 +289,7 @@ export class ProjectsRepository {
         const rows = body.member_ids_to_add.map((uid: string) => ({
           id: `alc_${require('crypto').randomBytes(6).toString('hex')}`,
           user_id: uid,
-          project_id: project.id,
+          project_id: projectId,
         }));
         await tx.allocateProject.createMany({ data: rows, skipDuplicates: true });
         members_added.push(...body.member_ids_to_add);
@@ -284,7 +297,7 @@ export class ProjectsRepository {
 
       if (Array.isArray(body.member_ids_to_remove) && body.member_ids_to_remove.length > 0) {
         await tx.allocateProject.deleteMany({
-          where: { project_id: project.id, user_id: { in: body.member_ids_to_remove } },
+          where: { project_id: projectId, user_id: { in: body.member_ids_to_remove } },
         });
         members_removed.push(...body.member_ids_to_remove);
       }
@@ -311,7 +324,7 @@ export class ProjectsRepository {
     projectId: string,
     data: { task_name: string; task_description: string | null; assignee_id: string; start_date: Date; end_date: Date }
   ) {
-    const project = await this.assertProjectAccess(user, projectId);
+    await this.assertProjectAccess(user, projectId);
 
     // check assignee belongs to project allocation
     const alloc = await prisma.allocateProject.findFirst({
@@ -356,7 +369,7 @@ export class ProjectsRepository {
     user: { id: string; role_id: number; company_id: string | null },
     projectId: string
   ) {
-    const project = await this.assertProjectAccess(user, projectId);
+    await this.assertProjectAccess(user, projectId);
     const projectRow = await prisma.project.findUnique({ where: { id: projectId } });
     const allocations = await prisma.allocateProject.findMany({
       where: { project_id: projectId },
@@ -407,9 +420,10 @@ export class ProjectsRepository {
     }));
 
     return {
-      project_id: project.id,
+      project_id: projectId,
       project_name: projectRow?.project_name || null,
       members: enriched,
+      total: enriched.length,
       total_members: enriched.length,
     };
   }

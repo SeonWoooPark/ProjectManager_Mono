@@ -45,36 +45,36 @@ export class ProjectsModule {
       (req, res, next) => resolve<ProjectsController>('ProjectsController').listProjects(req, res, next)
     );
 
-    // GET /api/v1/projects/:projectId - project detail
+    // GET /api/v1/projects/:project_id - project detail
     this._router.get(
-      '/:projectId',
+      '/:project_id',
       authenticateToken,
       requireActiveUser,
       ProjectsValidator.validateProjectIdParam(),
       (req, res, next) => resolve<ProjectsController>('ProjectsController').getProjectDetail(req, res, next)
     );
 
-    // GET /api/v1/projects/:projectId/tasks - tasks for a project
+    // GET /api/v1/projects/:project_id/tasks - tasks for a project
     this._router.get(
-      '/:projectId/tasks',
+      '/:project_id/tasks',
       authenticateToken,
       requireActiveUser,
       ProjectsValidator.validateProjectTasksQuery(),
       (req, res, next) => resolve<ProjectsController>('ProjectsController').getProjectTasks(req, res, next)
     );
 
-    // GET /api/v1/projects/:projectId/members - project members
+    // GET /api/v1/projects/:project_id/members - project members
     this._router.get(
-      '/:projectId/members',
+      '/:project_id/members',
       authenticateToken,
       requireActiveUser,
       ProjectsValidator.validateProjectIdParam(),
       (req, res, next) => resolve<ProjectsController>('ProjectsController').getProjectMembers(req, res, next)
     );
 
-    // PATCH /api/v1/projects/:projectId - update project (manager only)
+    // PATCH /api/v1/projects/:project_id - update project (manager only)
     this._router.patch(
-      '/:projectId',
+      '/:project_id',
       authenticateToken,
       requireActiveUser,
       requireCompanyManager,
@@ -82,9 +82,9 @@ export class ProjectsModule {
       (req, res, next) => resolve<ProjectsController>('ProjectsController').updateProject(req, res, next)
     );
 
-    // POST /api/v1/projects/:projectId/tasks - create task under project (manager only)
+    // POST /api/v1/projects/:project_id/tasks - create task under project (manager only)
     this._router.post(
-      '/:projectId/tasks',
+      '/:project_id/tasks',
       authenticateToken,
       requireActiveUser,
       requireCompanyManager,

@@ -11,7 +11,7 @@ export class TasksValidator extends BaseValidator {
 
   static validateChangeStatus() {
     return BaseValidator.validate([
-      param('taskId').matches(/^tsk_[a-zA-Z0-9]{6,}$/),
+      param('task_id').matches(/^tsk_[a-zA-Z0-9]{6,}$/),
       body('status_id').isInt({ min: 1 }),
       body('comment').optional().isString().isLength({ max: 1000 }),
     ]);
@@ -19,7 +19,7 @@ export class TasksValidator extends BaseValidator {
 
   static validateUpdateTask() {
     return BaseValidator.validate([
-      param('taskId').matches(/^tsk_[a-zA-Z0-9]{6,}$/),
+      param('task_id').matches(/^tsk_[a-zA-Z0-9]{6,}$/),
       body('task_name').optional().isString().isLength({ min: 1, max: 200 }),
       body('task_description').optional().isString().isLength({ max: 2000 }),
       body('end_date').optional().isISO8601(),

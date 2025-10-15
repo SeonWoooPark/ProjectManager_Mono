@@ -8,7 +8,7 @@ import { injectable, inject } from 'tsyringe';
 export class MembersController {
   constructor(@inject('MembersService') private service: MembersService) {}
 
-  async listCompanyMembers(req: AuthenticatedRequest, res: Response, next: Function) {
+  async listCompanyMembers(req: AuthenticatedRequest, res: Response, next: Function): Promise<any> {
     try {
       const user = req.user!;
       const { status_id, role_id } = req.query as any;
@@ -22,10 +22,21 @@ export class MembersController {
     }
   }
 
-  async listPendingMembers(req: AuthenticatedRequest, res: Response, next: Function) {
+  async listPendingMembers(req: AuthenticatedRequest, res: Response, next: Function): Promise<any> {
     try {
       const user = req.user!;
       const result = await this.service.listPendingMembers(user);
+      return ResponseFormatter.success(res, result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getProjectMembers(req: AuthenticatedRequest, res: Response, next: Function): Promise<any> {
+    try {
+      const user = req.user!;
+      const { project_id: projectId } = req.params;
+      const result = await this.service.getProjectMembers(user, projectId);
       return ResponseFormatter.success(res, result);
     } catch (err) {
       next(err);

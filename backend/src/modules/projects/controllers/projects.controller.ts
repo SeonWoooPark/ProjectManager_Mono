@@ -8,7 +8,7 @@ import { injectable, inject } from 'tsyringe';
 export class ProjectsController {
   constructor(@inject('ProjectsService') private service: ProjectsService) {}
 
-  async createProject(req: AuthenticatedRequest, res: Response, next: Function) {
+  async createProject(req: AuthenticatedRequest, res: Response, next: Function): Promise<any> {
     try {
       const user = req.user!;
       const result = await this.service.createProject(user, req.body);
@@ -18,7 +18,7 @@ export class ProjectsController {
     }
   }
 
-  async listProjects(req: AuthenticatedRequest, res: Response, next: Function) {
+  async listProjects(req: AuthenticatedRequest, res: Response, next: Function): Promise<any> {
     try {
       const user = req.user!;
       const { page, limit, status_id } = req.query as any;
@@ -33,10 +33,10 @@ export class ProjectsController {
     }
   }
 
-  async getProjectDetail(req: AuthenticatedRequest, res: Response, next: Function) {
+  async getProjectDetail(req: AuthenticatedRequest, res: Response, next: Function): Promise<any> {
     try {
       const user = req.user!;
-      const { projectId } = req.params;
+      const { project_id: projectId } = req.params;
       const result = await this.service.getProjectDetail(user, projectId);
       return ResponseFormatter.success(res, result);
     } catch (err) {
@@ -44,10 +44,10 @@ export class ProjectsController {
     }
   }
 
-  async getProjectTasks(req: AuthenticatedRequest, res: Response, next: Function) {
+  async getProjectTasks(req: AuthenticatedRequest, res: Response, next: Function): Promise<any> {
     try {
       const user = req.user!;
-      const { projectId } = req.params;
+      const { project_id: projectId } = req.params;
       const { status_id, assignee_id } = req.query as any;
       const result = await this.service.getProjectTasks(user, projectId, {
         status_id: status_id ? parseInt(status_id) : undefined,
@@ -59,10 +59,10 @@ export class ProjectsController {
     }
   }
 
-  async updateProject(req: AuthenticatedRequest, res: Response, next: Function) {
+  async updateProject(req: AuthenticatedRequest, res: Response, next: Function): Promise<any> {
     try {
       const user = req.user!;
-      const { projectId } = req.params;
+      const { project_id: projectId } = req.params;
       const result = await this.service.updateProject(user, projectId, req.body);
       return ResponseFormatter.success(res, result);
     } catch (err) {
@@ -70,10 +70,10 @@ export class ProjectsController {
     }
   }
 
-  async createTaskInProject(req: AuthenticatedRequest, res: Response, next: Function) {
+  async createTaskInProject(req: AuthenticatedRequest, res: Response, next: Function): Promise<any> {
     try {
       const user = req.user!;
-      const { projectId } = req.params;
+      const { project_id: projectId } = req.params;
       const result = await this.service.createTaskInProject(user, projectId, req.body);
       return ResponseFormatter.created(res, result);
     } catch (err) {
@@ -81,10 +81,10 @@ export class ProjectsController {
     }
   }
 
-  async getProjectMembers(req: AuthenticatedRequest, res: Response, next: Function) {
+  async getProjectMembers(req: AuthenticatedRequest, res: Response, next: Function): Promise<any> {
     try {
       const user = req.user!;
-      const { projectId } = req.params;
+      const { project_id: projectId } = req.params;
       const result = await this.service.getProjectMembers(user, projectId);
       return ResponseFormatter.success(res, result);
     } catch (err) {

@@ -376,6 +376,319 @@ export class TestHelper {
         }
       }
     }
+
+    // 기본 상태 데이터 재생성
+    await this.seedStatusData();
+  }
+
+  // 기본 상태 데이터 시드
+  async seedStatusData() {
+    try {
+      // Create Roles
+      await this.prisma.role.createMany({
+        data: [
+          { id: 1, role_name: 'SYSTEM_ADMIN' },
+          { id: 2, role_name: 'COMPANY_MANAGER' },
+          { id: 3, role_name: 'TEAM_MEMBER' },
+        ],
+        skipDuplicates: true,
+      });
+
+      // Create User Status
+      await this.prisma.userStatus.createMany({
+        data: [
+          { id: 1, status_name: 'ACTIVE' },
+          { id: 2, status_name: 'INACTIVE' },
+          { id: 3, status_name: 'PENDING' },
+        ],
+        skipDuplicates: true,
+      });
+
+      // Create Company Status
+      await this.prisma.companyStatus.createMany({
+        data: [
+          { id: 1, status_name: 'ACTIVE' },
+          { id: 2, status_name: 'INACTIVE' },
+          { id: 3, status_name: 'PENDING' },
+        ],
+        skipDuplicates: true,
+      });
+
+      // Create Project Status
+      await this.prisma.projectStatus.createMany({
+        data: [
+          { id: 1, status_name: 'NOT_STARTED' },
+          { id: 2, status_name: 'IN_PROGRESS' },
+          { id: 3, status_name: 'COMPLETED' },
+          { id: 4, status_name: 'ON_HOLD' },
+          { id: 5, status_name: 'CANCELLED' },
+        ],
+        skipDuplicates: true,
+      });
+
+      // Create Task Status  
+      await this.prisma.taskStatus.createMany({
+        data: [
+          { id: 1, status_name: 'TODO' },
+          { id: 2, status_name: 'IN_PROGRESS' },
+          { id: 3, status_name: 'IN_REVIEW' },
+          { id: 4, status_name: 'DONE' },
+          { id: 5, status_name: 'CANCELLED' },
+        ],
+        skipDuplicates: true,
+      });
+
+    } catch (error: any) {
+      console.error('시드 데이터 생성 중 오류:', error.message);
+    }
+  }
+
+  // ========== Members API 헬퍼 메서드 ==========
+
+  // 회사 전체 팀원 조회
+  async getMembers(token: string, statusId?: number, roleId?: number) {
+    const params = new URLSearchParams();
+    if (statusId) params.append('status_id', statusId.toString());
+    if (roleId) params.append('role_id', roleId.toString());
+
+    const queryString = params.toString();
+    const url = queryString ? `/api/v1/members?${queryString}` : '/api/v1/members';
+
+    const response = await this.getWithAuth(url, token);
+
+    if (response.status !== 200) {
+      throw new Error(
+        `팀원 목록 조회 실패: ${response.body.message || response.body.error?.message || 'Unknown error'}`
+      );
+    }
+
+    return response.body.data;
+  }
+
+  // 가입 요청한 팀원들 조회 (COMPANY_MANAGER 권한 필요)
+  async getPendingMembers(token: string) {
+    const response = await this.getWithAuth('/api/v1/members/pending', token);
+
+    if (response.status !== 200) {
+      throw new Error(
+        `대기 중인 팀원 조회 실패: ${response.body.message || response.body.error?.message || 'Unknown error'}`
+      );
+    }
+
+    return response.body.data;
+  }
+
+  // ========== Projects API 헬퍼 메서드 ==========
+
+  // 프로젝트 생성
+  async createProject(
+    token: string,
+    projectData: {
+      project_name: string;
+      project_description: string;
+      start_date: string;
+      end_date: string;
+      progress_rate?: number;
+      status_id?: number;
+      member_ids?: string[];
+    }
+  ) {
+    const response = await this.postWithAuth('/api/v1/projects', token, projectData);
+
+    if (response.status !== 201) {
+      throw new Error(
+        `프로젝트 생성 실패: ${response.body.message || response.body.error?.message || 'Unknown error'}`
+      );
+    }
+
+    return response.body.data;
+  }
+
+  // 회사 전체 프로젝트 조회
+  async getProjects(token: string, page?: number, limit?: number, statusId?: number) {
+    const params = new URLSearchParams();
+    if (page) params.append('page', page.toString());
+    if (limit) params.append('limit', limit.toString());
+    if (statusId) params.append('status_id', statusId.toString());
+
+    const queryString = params.toString();
+    const url = queryString ? `/api/v1/projects?${queryString}` : '/api/v1/projects';
+
+    const response = await this.getWithAuth(url, token);
+
+    if (response.status !== 200) {
+      console.error('프로젝트 조회 실패:', {
+        status: response.status,
+        body: JSON.stringify(response.body, null, 2)
+      });
+      throw new Error(
+        `프로젝트 목록 조회 실패: ${response.body.message || response.body.error?.message || 'Unknown error'}`
+      );
+    }
+
+    return response.body.data;
+  }
+
+  // 특정 프로젝트 상세 조회
+  async getProjectDetail(token: string, projectId: string) {
+    const response = await this.getWithAuth(`/api/v1/projects/${projectId}`, token);
+
+    if (response.status !== 200) {
+      throw new Error(
+        `프로젝트 상세 조회 실패: ${response.body.message || response.body.error?.message || 'Unknown error'}`
+      );
+    }
+
+    return response.body.data;
+  }
+
+  // 프로젝트 정보 수정
+  async updateProject(
+    token: string,
+    projectId: string,
+    updateData: {
+      project_name?: string;
+      project_description?: string;
+      start_date?: string;
+      end_date?: string;
+      progress_rate?: number;
+      status_id?: number;
+    }
+  ) {
+    const response = await this.patchWithAuth(`/api/v1/projects/${projectId}`, token, updateData);
+
+    if (response.status !== 200) {
+      throw new Error(
+        `프로젝트 수정 실패: ${response.body.message || response.body.error?.message || 'Unknown error'}`
+      );
+    }
+
+    return response.body.data;
+  }
+
+  // 특정 프로젝트 참여 팀원 조회
+  async getProjectMembers(token: string, projectId: string) {
+    const response = await this.getWithAuth(`/api/v1/projects/${projectId}/members`, token);
+
+    if (response.status !== 200) {
+      throw new Error(
+        `프로젝트 팀원 조회 실패: ${response.body.message || response.body.error?.message || 'Unknown error'}`
+      );
+    }
+
+    return response.body.data;
+  }
+
+  // ========== Tasks API 헬퍼 메서드 ==========
+
+  // 프로젝트에 새 작업 생성
+  async createTask(
+    token: string,
+    projectId: string,
+    taskData: {
+      task_name: string;
+      task_description: string;
+      assignee_id?: string;
+      start_date?: string;
+      end_date?: string;
+      priority_id?: number;
+      progress_rate?: number;
+      status_id?: number;
+    }
+  ) {
+    const response = await this.postWithAuth(`/api/v1/projects/${projectId}/tasks`, token, taskData);
+
+    if (response.status !== 201) {
+      throw new Error(
+        `작업 생성 실패: ${response.body.message || response.body.error?.message || 'Unknown error'}`
+      );
+    }
+
+    return response.body.data;
+  }
+
+  // 프로젝트 관련 작업들 조회
+  async getProjectTasks(token: string, projectId: string, statusId?: number, assigneeId?: string) {
+    const params = new URLSearchParams();
+    if (statusId) params.append('status_id', statusId.toString());
+    if (assigneeId) params.append('assignee_id', assigneeId);
+
+    const queryString = params.toString();
+    const url = queryString ? `/api/v1/projects/${projectId}/tasks?${queryString}` : `/api/v1/projects/${projectId}/tasks`;
+
+    const response = await this.getWithAuth(url, token);
+
+    if (response.status !== 200) {
+      throw new Error(
+        `프로젝트 작업 조회 실패: ${response.body.message || response.body.error?.message || 'Unknown error'}`
+      );
+    }
+
+    return response.body.data;
+  }
+
+  // 팀원에게 할당된 작업들 조회
+  async getAssignedTasks(token: string, statusId?: number, projectId?: string) {
+    const params = new URLSearchParams();
+    if (statusId) params.append('status_id', statusId.toString());
+    if (projectId) params.append('project_id', projectId);
+
+    const queryString = params.toString();
+    const url = queryString ? `/api/v1/tasks/assigned?${queryString}` : '/api/v1/tasks/assigned';
+
+    const response = await this.getWithAuth(url, token);
+
+    if (response.status !== 200) {
+      throw new Error(
+        `할당된 작업 조회 실패: ${response.body.message || response.body.error?.message || 'Unknown error'}`
+      );
+    }
+
+    return response.body.data;
+  }
+
+  // 작업 정보 수정
+  async updateTask(
+    token: string,
+    taskId: string,
+    updateData: {
+      task_name?: string;
+      task_description?: string;
+      assignee_id?: string;
+      start_date?: string;
+      end_date?: string;
+      priority_id?: number;
+      progress_rate?: number;
+      status_id?: number;
+    }
+  ) {
+    const response = await this.patchWithAuth(`/api/v1/tasks/${taskId}`, token, updateData);
+
+    if (response.status !== 200) {
+      throw new Error(
+        `작업 수정 실패: ${response.body.message || response.body.error?.message || 'Unknown error'}`
+      );
+    }
+
+    return response.body.data;
+  }
+
+  // 작업 상태 변경
+  async updateTaskStatus(token: string, taskId: string, statusId: number) {
+    const response = await this.patchWithAuth(`/api/v1/tasks/${taskId}/status`, token, { status_id: statusId });
+
+    if (response.status !== 200) {
+      throw new Error(
+        `작업 상태 변경 실패: ${response.body.message || response.body.error?.message || 'Unknown error'}`
+      );
+    }
+
+    return response.body.data;
+  }
+
+  // PATCH 요청 헬퍼 메서드 추가
+  async patchWithAuth(url: string, token: string, data?: any) {
+    return request(this.app).patch(url).set('Authorization', `Bearer ${token}`).send(data);
   }
 
   // 테스트 데이터 시드

@@ -8,6 +8,8 @@ export class ProjectsValidator extends BaseValidator {
       body('project_description').optional().isString().isLength({ max: 2000 }),
       body('start_date').isISO8601().withMessage('start_date 형식이 올바르지 않습니다'),
       body('end_date').isISO8601().withMessage('end_date 형식이 올바르지 않습니다'),
+      body('progress_rate').optional().isFloat({ min: 0, max: 100 }).withMessage('진행률은 0~100 사이의 숫자여야 합니다'),
+      body('status_id').optional().isInt({ min: 1 }).withMessage('유효하지 않은 상태입니다'),
       body('member_ids').optional().isArray().withMessage('member_ids는 배열이어야 합니다'),
     ]);
   }
@@ -22,13 +24,13 @@ export class ProjectsValidator extends BaseValidator {
 
   static validateProjectIdParam() {
     return BaseValidator.validate([
-      param('projectId').matches(/^prj_[a-zA-Z0-9]{6,}$/).withMessage('올바른 projectId 형식이 아닙니다'),
+      param('project_id').matches(/^prj_[a-zA-Z0-9]{6,}$/).withMessage('올바른 projectId 형식이 아닙니다'),
     ]);
   }
 
   static validateProjectTasksQuery() {
     return BaseValidator.validate([
-      param('projectId').matches(/^prj_[a-zA-Z0-9]{6,}$/),
+      param('project_id').matches(/^prj_[a-zA-Z0-9]{6,}$/),
       query('status_id').optional().isInt({ min: 1 }),
       query('assignee_id').optional().matches(/^usr_[a-zA-Z0-9]{6,}$/),
     ]);
@@ -36,7 +38,7 @@ export class ProjectsValidator extends BaseValidator {
 
   static validateUpdateProject() {
     return BaseValidator.validate([
-      param('projectId').matches(/^prj_[a-zA-Z0-9]{6,}$/),
+      param('project_id').matches(/^prj_[a-zA-Z0-9]{6,}$/),
       body('project_name').optional().isString().isLength({ min: 1, max: 200 }),
       body('project_description').optional().isString().isLength({ max: 2000 }),
       body('end_date').optional().isISO8601(),
@@ -49,12 +51,13 @@ export class ProjectsValidator extends BaseValidator {
 
   static validateCreateTaskInProject() {
     return BaseValidator.validate([
-      param('projectId').matches(/^prj_[a-zA-Z0-9]{6,}$/),
+      param('project_id').matches(/^prj_[a-zA-Z0-9]{6,}$/),
       body('task_name').isString().isLength({ min: 1, max: 200 }),
       body('task_description').optional().isString().isLength({ max: 2000 }),
       body('assignee_id').matches(/^usr_[a-zA-Z0-9]{6,}$/),
       body('start_date').isISO8601(),
       body('end_date').isISO8601(),
+      body('progress_rate').optional().isFloat({ min: 0, max: 100 }).withMessage('진행률은 0~100 사이의 숫자여야 합니다'),
     ]);
   }
 }

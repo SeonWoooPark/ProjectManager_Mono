@@ -246,3 +246,4 @@ GET /health
 
 **2025.09 현재 구현 상태**: Auth 모듈 완전 구현 완료 (10개 API, DI Container 기반 아키텍처)  
 **상세 백엔드 아키텍처**: `backend/CLAUDE.md` 참조
+- typescript 관련 파일 작업을 수행했을 때 작업을 마치고 항상 타입체크를 해줘.

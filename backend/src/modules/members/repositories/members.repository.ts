@@ -1,5 +1,6 @@
 import { prisma } from '@infrastructure/database/prisma.service';
-import { AuthorizationError } from '@shared/utils/errors';
+import { AuthorizationError, NotFoundError } from '@shared/utils/errors';
+import { UserRole } from '@modules/auth/interfaces/auth.types';
 import { injectable } from 'tsyringe';
 
 @injectable()
@@ -86,5 +87,77 @@ export class MembersRepository {
       days_waiting: Math.ceil((Date.now() - u.created_at.getTime()) / (1000 * 3600 * 24)),
     }));
     return { pending_members, total: pending_members.length };
+  }
+
+  async assertProjectAccess(user: { id: string; role_id: number; company_id: string | null }, projectId: string) {
+    const project = await prisma.project.findUnique({ where: { id: projectId } });
+    if (!project) throw new NotFoundError('프로젝트를 찾을 수 없습니다', 'project');
+    if (user.role_id === UserRole.SYSTEM_ADMIN) return project;
+    if (!user.company_id || project.company_id !== user.company_id) {
+      throw new AuthorizationError('프로젝트 접근 권한이 없습니다');
+    }
+    return project;
+  }
+
+  async getProjectMembers(
+    user: { id: string; role_id: number; company_id: string | null },
+    projectId: string
+  ) {
+    await this.assertProjectAccess(user, projectId);
+    const projectRow = await prisma.project.findUnique({ where: { id: projectId } });
+    const allocations = await prisma.allocateProject.findMany({
+      where: { project_id: projectId },
+      include: { user: { include: { role: true, status: true } } },
+      orderBy: { allocated_at: 'asc' },
+    });
+
+    const members = allocations.map((ap) => ({
+      id: ap.user_id,
+      email: ap.user.email,
+      user_name: ap.user.user_name,
+      role_name: ap.user.role.role_name,
+      status_name: ap.user.status.status_name,
+      allocated_at: ap.allocated_at.toISOString(),
+      // counts in project
+      // compute tasks_in_project and completed count per member
+    }));
+
+    // compute per member stats in project
+    const memberIds = allocations.map((ap) => ap.user_id);
+    const tasks = await prisma.task.findMany({
+      where: { project_id: projectId, assignee_id: { in: memberIds } },
+      include: { status: true },
+    });
+
+    const statusByUser: Record<string, { todo: number; in_progress: number; review: number; completed: number; total: number }> = {};
+    for (const t of tasks) {
+      const uid = t.assignee_id!;
+      statusByUser[uid] ||= { todo: 0, in_progress: 0, review: 0, completed: 0, total: 0 };
+      statusByUser[uid].total++;
+      const name = t.status?.status_name || '';
+      if (name === 'Todo') statusByUser[uid].todo++;
+      else if (name === 'In Progress') statusByUser[uid].in_progress++;
+      else if (name === 'Review') statusByUser[uid].review++;
+      else if (name === 'Completed') statusByUser[uid].completed++;
+    }
+
+    const enriched = members.map((m) => ({
+      ...m,
+      tasks_in_project: statusByUser[m.id]?.total || 0,
+      completed_tasks: statusByUser[m.id]?.completed || 0,
+      current_task_status: {
+        todo: statusByUser[m.id]?.todo || 0,
+        in_progress: statusByUser[m.id]?.in_progress || 0,
+        review: statusByUser[m.id]?.review || 0,
+        completed: statusByUser[m.id]?.completed || 0,
+      },
+    }));
+
+    return {
+      project_id: projectId,
+      project_name: projectRow?.project_name || null,
+      members: enriched,
+      total_members: enriched.length,
+    };
   }
 }
