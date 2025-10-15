@@ -3,11 +3,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@comp
 import { Badge } from '@components/ui/badge';
 import { Button } from '@components/ui/button';
 import { Avatar, AvatarFallback } from '@components/ui/avatar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@components/ui/select';
 import { ReadOnlyKanbanBoard } from '@components/dashboard/read-only-kanban-board';
 import { DraggableKanbanBoard } from '@components/dashboard/draggable-kanban-board';
 import { ProjectSettingsForm } from './ProjectSettingsForm';
 import { CheckSquare, Users, Activity, LayoutGrid, Settings } from 'lucide-react';
 import { taskStatusBadgeClass, taskStatusLabel, TaskStatusKey } from '@/utils/status';
+import { useState } from 'react';
 
 interface ProjectTabTask {
   id: string;
@@ -67,6 +69,23 @@ export function ProjectTabs({
   projectMembers = [],
   onTaskStatusChange,
 }: ProjectTabsProps) {
+  const [selectedStatus, setSelectedStatus] = useState<TaskStatusKey | 'all'>('all');
+
+  // 필터링된 작업 목록
+  const filteredTasks = selectedStatus === 'all'
+    ? tasks
+    : tasks.filter(task => task.statusKey === selectedStatus);
+
+  // 각 상태별 작업 개수
+  const statusCounts = {
+    all: tasks.length,
+    todo: tasks.filter(t => t.statusKey === 'todo').length,
+    inProgress: tasks.filter(t => t.statusKey === 'inProgress').length,
+    review: tasks.filter(t => t.statusKey === 'review').length,
+    completed: tasks.filter(t => t.statusKey === 'completed').length,
+    cancelled: tasks.filter(t => t.statusKey === 'cancelled').length,
+  };
+
   return (
     <Tabs defaultValue="kanban" className="space-y-4">
       <TabsList className="bg-white text-black">
@@ -119,12 +138,29 @@ export function ProjectTabs({
       <TabsContent value="tasks">
         <Card>
           <CardHeader>
-            <CardTitle>작업 목록</CardTitle>
-            <CardDescription>프로젝트에 할당된 모든 작업을 확인하세요</CardDescription>
+            <div className="flex items-start justify-between">
+              <div>
+                <CardTitle>작업 목록</CardTitle>
+                <CardDescription>프로젝트에 할당된 모든 작업을 확인하세요</CardDescription>
+              </div>
+              <Select value={selectedStatus} onValueChange={(value) => setSelectedStatus(value as TaskStatusKey | 'all')}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="상태 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">전체 ({statusCounts.all})</SelectItem>
+                  <SelectItem value="todo">할 일 ({statusCounts.todo})</SelectItem>
+                  <SelectItem value="inProgress">진행 중 ({statusCounts.inProgress})</SelectItem>
+                  <SelectItem value="review">검토 중 ({statusCounts.review})</SelectItem>
+                  <SelectItem value="completed">완료 ({statusCounts.completed})</SelectItem>
+                  <SelectItem value="cancelled">취소 ({statusCounts.cancelled})</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {tasks.map((task) => (
+              {filteredTasks.map((task) => (
                 <div
                   key={task.id}
                   className="border rounded-lg p-4 hover:bg-accent/50 transition-colors"
@@ -177,9 +213,11 @@ export function ProjectTabs({
                   </div>
                 </div>
               ))}
-              {tasks.length === 0 && (
+              {filteredTasks.length === 0 && (
                 <div className="text-center text-muted-foreground py-10">
-                  등록된 작업이 없습니다.
+                  {selectedStatus === 'all'
+                    ? '등록된 작업이 없습니다.'
+                    : `${taskStatusLabel(selectedStatus)} 상태의 작업이 없습니다.`}
                 </div>
               )}
             </div>
