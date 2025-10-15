@@ -8,7 +8,7 @@ import type { LucideIcon } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import LoadingSpinner from '@components/atoms/LoadingSpinner';
 import { useAssignedTasks, tasksQueryKeys } from '@/services/tasks/tasksQueries';
-import { useProjects } from '@/services/projects/projectsQueries';
+import { useProjects, projectsQueryKeys } from '@/services/projects/projectsQueries';
 import { tasksService } from '@/services/tasks/tasksService';
 import { DEFAULT_TASK_PRIORITY_LABEL, TaskStatusKey, taskStatusBadgeClass, taskStatusLabel, toTaskStatusKey } from '@/utils/status';
 import { useToast } from '@components/ui/use-toast';
@@ -68,7 +68,10 @@ export function MemberTasksView() {
     },
     onSuccess: () => {
       toast({ title: '작업 상태가 업데이트되었습니다.' });
-      queryClient.invalidateQueries({ queryKey: tasksQueryKeys.assigned() });
+      // 모든 tasks 관련 쿼리 무효화 (할당된 작업 목록 및 통계 업데이트)
+      queryClient.invalidateQueries({ queryKey: tasksQueryKeys.all });
+      // 모든 projects 관련 쿼리도 무효화 (진행률, 작업 통계 업데이트)
+    queryClient.invalidateQueries({ queryKey: projectsQueryKeys.all });
     },
     onError: () => {
       toast({ title: '작업 상태 변경에 실패했습니다.', variant: 'destructive' });
@@ -102,9 +105,9 @@ export function MemberTasksView() {
     });
   }, [data?.tasks]);
 
-  const uniqueProjects = useMemo(() => {
-    return Array.from(new Set(tasks.map((task) => task.project)));
-  }, [tasks]);
+  // const uniqueProjects = useMemo(() => {
+  //   return Array.from(new Set(tasks.map((task) => task.project)));
+  // }, [tasks]);
 
   const statusCounts = useMemo(() => {
     return {
@@ -214,9 +217,9 @@ export function MemberTasksView() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">모든 프로젝트</SelectItem>
-                  {uniqueProjects.map((project) => (
-                    <SelectItem key={project} value={project}>
-                      {project}
+                  {assignedProjects.map((project) => (
+                    <SelectItem key={project.id} value={project.project_name}>
+                      {project.project_name}
                     </SelectItem>
                   ))}
                 </SelectContent>

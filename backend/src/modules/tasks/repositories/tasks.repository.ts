@@ -45,10 +45,10 @@ export class TasksRepository {
     const stats = { total: data.length, todo: 0, in_progress: 0, review: 0, completed: 0 };
     for (const t of tasks) {
       const name = t.status?.status_name || '';
-      if (name === 'Todo') stats.todo++;
-      else if (name === 'In Progress') stats.in_progress++;
-      else if (name === 'Review') stats.review++;
-      else if (name === 'Completed') stats.completed++;
+      if (name === 'TODO') stats.todo++;
+      else if (name === 'IN_PROGRESS') stats.in_progress++;
+      else if (name === 'IN_REVIEW') stats.review++;
+      else if (name === 'DONE') stats.completed++;
     }
 
     return { 
