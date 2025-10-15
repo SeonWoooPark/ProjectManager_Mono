@@ -1,6 +1,12 @@
 import { Router } from 'express';
 import type { MembersController } from './controllers/members.controller';
-import { authenticateToken, requireActiveUser, requireCompanyManager } from '@modules/auth/middleware/auth.middleware';
+import {
+  authenticateToken,
+  requireActiveUser,
+  requireCompanyManager,
+  requireManagerOrAdmin,
+  requireSameCompany,
+} from '@modules/auth/middleware/auth.middleware';
 import { MembersValidator } from './validators/members.validator';
 import { resolve } from '@core/container';
 
@@ -47,6 +53,27 @@ export class MembersModule {
       requireActiveUser,
       MembersValidator.validateGetProjectMembers(),
       (req, res, next) => resolve<MembersController>('MembersController').getProjectMembers(req, res, next)
+    );
+
+    // PATCH /api/v1/members/:userId/status
+    this._router.patch(
+      '/:userId/status',
+      authenticateToken,
+      requireActiveUser,
+      requireManagerOrAdmin,
+      requireSameCompany,
+      MembersValidator.validateUpdateStatus(),
+      (req, res, next) => resolve<MembersController>('MembersController').updateMemberStatus(req, res, next)
+    );
+
+    // PATCH /api/v1/members/:userId/profile
+    this._router.patch(
+      '/:userId/profile',
+      authenticateToken,
+      requireActiveUser,
+      requireSameCompany,
+      MembersValidator.validateUpdateProfile(),
+      (req, res, next) => resolve<MembersController>('MembersController').updateMemberProfile(req, res, next)
     );
   }
 }
